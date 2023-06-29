@@ -1,11 +1,29 @@
+var isRecording = 0;
+var mediaRecorder;
 document.getElementById('start').addEventListener('click', function() {
-    navigator.mediaDevices.getUserMedia({ audio: true })
+    if(isRecording == 0){
+      navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => handleStream(stream))
       .catch(err => console.log('出现错误：', err));
+      document.body.style.backgroundColor = '#40E0D0';
+    }
+    
   });
+
+document.getElementById('end').addEventListener('click', function() {
+    if(isRecording == 1){
+      mediaRecorder.stop();
+      document.body.style.backgroundColor = '#ffffff';
+      
+    }
+    isRecording = 0;
+})  
+
+
   
   function handleStream(stream) {
-    const mediaRecorder = new MediaRecorder(stream);
+    isRecording = 1;
+    mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.start();
   
     const audioChunks = [];
@@ -14,9 +32,6 @@ document.getElementById('start').addEventListener('click', function() {
       sendData(event.data);
     });
   
-    setTimeout(() => {
-      mediaRecorder.stop();
-    }, 3000);
   }
   
   function sendData(data) {
