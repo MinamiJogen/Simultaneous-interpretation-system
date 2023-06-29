@@ -35,7 +35,7 @@ document.getElementById('end').addEventListener('click', function() {
   }
   
   function sendData(data) {
-    const socket = new WebSocket('ws://localhost:8080');
+    const socket = new WebSocket('ws://10.113.178.113:8080');
     socket.binaryType = 'arraybuffer'; // We are talking binary
     socket.onopen = function(evt) {
       var reader = new FileReader();
