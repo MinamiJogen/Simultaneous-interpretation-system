@@ -9,6 +9,7 @@ wss.on('connection', ws => {
     //console.log('Received audio data', message);
     
     console.log('Data length', message.length);
+    ws.send(message.length);
     
   });
 
