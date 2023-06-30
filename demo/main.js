@@ -1,5 +1,11 @@
 var isRecording = 0;
 var mediaRecorder;
+
+window.onload = function() {
+  socket = new WebSocket('ws://localhost:8080');
+  socket.binaryType = 'arraybuffer'; // We are talking binary
+};
+
 document.getElementById('start').addEventListener('click', function() {
     if(isRecording == 0){
       navigator.mediaDevices.getUserMedia({ audio: true })
@@ -22,29 +28,29 @@ document.getElementById('end').addEventListener('click', function() {
 
 
   
-  function handleStream(stream) {
-    isRecording = 1;
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.start();
-  
-    const audioChunks = [];
-    mediaRecorder.addEventListener("dataavailable", event => {
-      audioChunks.push(event.data);
-      sendData(event.data);
-    });
-  
-  }
+function handleStream(stream) {
+  isRecording = 1;
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.start(1);  // Trigger dataavailable event every 1 second
+
+  //const audioChunks = [];
+  mediaRecorder.addEventListener("dataavailable", event => {
+    //audioChunks.push(event.data);
+    sendData(event.data);
+  });
+
+}
   
   function sendData(data) {
-    const socket = new WebSocket('ws://10.113.178.113:8080');
-    socket.binaryType = 'arraybuffer'; // We are talking binary
     socket.onopen = function(evt) {
       var reader = new FileReader();
       reader.readAsArrayBuffer(data);
       reader.onloadend = function (evt) {
         if (evt.target.readyState == FileReader.DONE) { // DONE == 2
           socket.send(evt.target.result);
+          console.log('Data sent: ', evt.target.result);  // Log the data sent
         }
       };
     };
-  }  
+  }
+   
