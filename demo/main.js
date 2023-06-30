@@ -13,6 +13,7 @@ document.getElementById('start').addEventListener('click', function() {
 document.getElementById('end').addEventListener('click', function() {
     if(isRecording == 1){
       mediaRecorder.stop();
+      
       document.body.style.backgroundColor = '#ffffff';
       
     }
