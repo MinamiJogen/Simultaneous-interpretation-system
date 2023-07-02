@@ -1,10 +1,16 @@
+// import React, { Component } from 'react';
+// import React from 'react';
+
 var isRecording = 0;
 var mediaRecorder;
 var socket;
+var receivedData = "";
+var enc;
 
 window.onload = function() {
   socket = new WebSocket('ws://localhost:8080');
   socket.binaryType = 'arraybuffer'; // We are talking binary
+  enc = new TextDecoder("utf-8");//解析arraybuffer
 };
 
 document.getElementById('start').addEventListener('click', function() {
@@ -29,6 +35,12 @@ document.getElementById('end').addEventListener('click', function() {
     }
 });
 
+document.getElementById('clean').addEventListener('click', function() {
+    receivedData = "";
+    const content = document.getElementById('content');
+    content.innerHTML = receivedData;
+});
+
 function handleStream(stream) {
   isRecording = 1;
   mediaRecorder = new MediaRecorder(stream);
@@ -48,6 +60,9 @@ function sendData(data) {
   socket.onmessage = function(evt) {
     // 将接收到的消息打印到console
     console.log('Received message from server: ', evt.data);
+    receivedData = receivedData + evt.data;
+    const content = document.getElementById('content');
+    content.innerHTML = receivedData;
   };
 
   var reader = new FileReader();
@@ -59,3 +74,11 @@ function sendData(data) {
     }
   };
 }
+
+// function showContent(){
+//   return (
+//     <div>
+//       <p>{receivedData}</p>
+//     </div>
+//   )
+// }
