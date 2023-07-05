@@ -9,13 +9,22 @@ var enc;
 
 /**页面初始化 */
 window.onload = function() {
-
+  //var enc = new TextEncoder();                                  //转码器
 
   socket = new WebSocket('ws://localhost:8080');                //建立socket
   socket.onmessage = function(evt) {                            //监听socket传来的信息函数
+
+
+    decodedData = Array.prototype.map                             //解码->16进制
+   		.call(new Uint8Array(evt.data), x => ('00' + x.toString(16)).slice(-2))
+   		.join('');
+
+
+
     // 将接收到的消息打印到console
     console.log('Received message from server: ', evt.data);
-    receivedData = receivedData + evt.data;                     //本地储存
+    //receivedData = receivedData + decodedData;         //本地储存(原数据16进制)
+    receivedData = receivedData + evt.data.byteLength;         //本地储存(原数据长度)
     const content = document.getElementById('content');         //动态更新到页面
     content.innerHTML = receivedData;
   };
@@ -88,10 +97,3 @@ function sendData(data) {
   };
 }
 
-// function showContent(){
-//   return (
-//     <div>
-//       <p>{receivedData}</p>
-//     </div>
-//   )
-// }
