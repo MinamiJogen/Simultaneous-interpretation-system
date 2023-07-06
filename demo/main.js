@@ -1,6 +1,3 @@
-// import React, { Component } from 'react';
-// import React from 'react';
-
 var isRecording = 0;
 var mediaRecorder;
 var socket;
@@ -13,14 +10,9 @@ window.onload = function() {
 
   socket = new WebSocket('ws://localhost:8080');                //建立socket
   socket.onmessage = function(evt) {                            //监听socket传来的信息函数
-
-
     decodedData = Array.prototype.map                             //解码->16进制
    		.call(new Uint8Array(evt.data), x => ('00' + x.toString(16)).slice(-2))
    		.join('');
-
-
-
     // 将接收到的消息打印到console
     console.log('Received message from server: ', evt.data);
     //receivedData = receivedData + decodedData;         //本地储存(原数据16进制)
