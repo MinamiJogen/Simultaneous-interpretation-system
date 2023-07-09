@@ -66,12 +66,15 @@ document.getElementById('start').addEventListener('click', function() {
 function handleStream(stream) {
   isRecording = 1;
   mediaRecorder = new MediaRecorder(stream);
-  mediaRecorder.start(10);                                      //每10 ms触发数据可用
+  mediaRecorder.start(10); // 每10 ms触发数据可用
 
-  mediaRecorder.addEventListener("dataavailable", event => {    //监听录音数据可用
-    sendData(event.data);                                       //通过socket发送数据
+  mediaRecorder.addEventListener("dataavailable", event => {
+    // 直接通过socket发送数据
+    ws.send(event.data);
+    console.log('Data sent: ', event.data);  // Log the data sent
   });
 }
+
 
 
 /**通过socket发送数据 */
