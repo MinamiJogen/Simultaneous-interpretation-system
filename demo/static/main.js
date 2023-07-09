@@ -1,6 +1,6 @@
 var isRecording = 0;
 var mediaRecorder;
-var socket;
+var ws;
 var receivedData = "";
 var enc;
 
@@ -8,8 +8,10 @@ var enc;
 window.onload = function() {
   //var enc = new TextEncoder();                                  //转码器
 
-  socket = new WebSocket('ws://localhost:8080');                //建立socket
-  socket.onmessage = function(evt) {                            //监听socket传来的信息函数
+  ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
+  console.log('socket set',ws);
+  
+  ws.onmessage = function(evt) {
     decodedData = Array.prototype.map                             //解码->16进制
    		.call(new Uint8Array(evt.data), x => ('00' + x.toString(16)).slice(-2))
    		.join('');
@@ -22,7 +24,7 @@ window.onload = function() {
   };
 
 
-  socket.binaryType = 'arraybuffer'; // We are talking binary
+  ws.binaryType = 'arraybuffer'; // We are talking binary
   enc = new TextDecoder("utf-8");//解析arraybuffer
 };
 
@@ -51,10 +53,6 @@ document.getElementById('end').addEventListener('click', function() {
 document.getElementById('start').addEventListener('click', function() {
 
     if(isRecording == 0){                                       //录制处于关闭状态
-      if (socket.readyState !== WebSocket.OPEN) {               //尚未建立socket
-        console.log('Open a new socket');
-        socket = new WebSocket('ws://localhost:8080');          //建立socket
-      }
 
       navigator.mediaDevices.getUserMedia({ audio: true })      //寻求麦克风权限
       .then(stream => handleStream(stream))                     //处理麦克风数据流
@@ -83,7 +81,7 @@ function sendData(data) {
   reader.readAsArrayBuffer(data);                               //读取数据内容，触发onloadend
   reader.onloadend = function (evt) {                           //监听reader完成读取
     if (evt.target.readyState == FileReader.DONE) { // DONE == 2
-      socket.send(evt.target.result);
+      ws.send(evt.target.result);
       console.log('Data sent: ', evt.target.result);  // Log the data sent
     }
   };

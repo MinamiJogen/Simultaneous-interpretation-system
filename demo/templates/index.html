@@ -5,11 +5,11 @@
   <title>WebRTC & WebSocket Audio Stream Demo</title>
 </head>
 <body>
-  <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
   <button id="start">开始录制</button>
   <button id="end">结束录制</button>
   <button id="clean">清除内容</button>
-  <script src="main.js"></script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+
   <p id="content" style = "  word-wrap: break-word; max-width: 80%;"></p>
 </body>
 </html>
