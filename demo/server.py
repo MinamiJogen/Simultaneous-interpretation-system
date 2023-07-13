@@ -10,11 +10,11 @@ model = whisper.load_model("base")
 
 def save_as_mp3(data, filename):
     # Save the data as a WebM file
-    with open('temp.webm', 'wb') as f:
+    with open('temp.mp4', 'wb') as f:
         f.write(data)
 
     # Convert the WebM file to MP3
-    audio = AudioSegment.from_file('temp.webm', format='webm')
+    audio = AudioSegment.from_file('temp.mp4', format='mp4')
     audio.export(filename, format='mp3')
 
 # Dictionary to hold incoming audio data for each WebSocket

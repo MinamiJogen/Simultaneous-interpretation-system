@@ -12,14 +12,15 @@ window.onload = function() {
   console.log('socket set',ws);
   
   ws.onmessage = function(evt) {
-    decodedData = Array.prototype.map                             //解码->16进制
-   		.call(new Uint8Array(evt.data), x => ('00' + x.toString(16)).slice(-2))
-   		.join('');
+    // decodedData = Array.prototype.map                             //解码->16进制
+   	// 	.call(new Uint8Array(evt.data), x => ('00' + x.toString(16)).slice(-2))
+   	// 	.join('');
     // 将接收到的消息打印到console
     console.log('Received message from server: ', evt.data);
-    //receivedData = receivedData + decodedData;         //本地储存(原数据16进制)
-    receivedData = receivedData + evt.data.byteLength;         //本地储存(原数据长度)
+    receivedData = receivedData + evt.data;         //本地储存(原数据16进制)
+    //receivedData = receivedData + evt.data.byteLength;         //本地储存(原数据长度)
     const content = document.getElementById('content');         //动态更新到页面
+    //content.innerHTML = receivedData;
     content.innerHTML = receivedData;
   };
 
@@ -39,33 +40,31 @@ document.getElementById('clean').addEventListener('click', function() {
 document.getElementById('end').addEventListener('click', function() {
   if(isRecording == 1){                                       
     mediaRecorder.stop();                                       //停止录音
-    document.body.style.backgroundColor = '#ffffff';            //更改页面背景提示用户
+    mediaRecorder.onstop = function() {
+      // 处理停止录制后的操作
+      document.body.style.backgroundColor = '#ffffff'; // 更改页面背景提示用户
+    };
+    ws.send("STOP_RECORDING"); // Send a special message to indicate that recording has ended
   }
   isRecording = 0;
-  
-  // Send a special message to indicate that recording has ended
-  ws.send("STOP_RECORDING");
 });
-
 
 /**点击开始录制按钮 */
 document.getElementById('start').addEventListener('click', function() {
-
-    if(isRecording == 0){                                       //录制处于关闭状态
-
-      navigator.mediaDevices.getUserMedia({ audio: true })      //寻求麦克风权限
-      .then(stream => handleStream(stream))                     //处理麦克风数据流
-      .catch(err => console.log('出现错误：', err));      
-      document.body.style.backgroundColor = '#40E0D0';          //更改页面背景提示用户
-    }
-    
+  if(isRecording == 0){ // 录制处于关闭状态
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => handleStream(stream))
+      .catch(err => console.log('出现错误：', err));
+    document.body.style.backgroundColor = '#40E0D0'; // 更改页面背景提示用户
+  }
 });
 
 /**处理麦克风数据流 */
 function handleStream(stream) {
   isRecording = 1;
+  // 创建新的MediaRecorder对象
   mediaRecorder = new MediaRecorder(stream);
-  mediaRecorder.start(10); // 每10 ms触发数据可用
+  mediaRecorder.start(1000); // 每10 ms触发数据可用
 
   mediaRecorder.addEventListener("dataavailable", event => {
     // 直接通过socket发送数据
@@ -76,14 +75,12 @@ function handleStream(stream) {
 
 /**通过socket发送数据 */
 function sendData(data) {
-
   var reader = new FileReader();
-  reader.readAsArrayBuffer(data);                               //读取数据内容，触发onloadend
-  reader.onloadend = function (evt) {                           //监听reader完成读取
+  reader.readAsArrayBuffer(data); // 读取数据内容，触发onloadend
+  reader.onloadend = function (evt) { // 监听reader完成读取
     if (evt.target.readyState == FileReader.DONE) { // DONE == 2
       ws.send(evt.target.result);
       console.log('Data sent: ', evt.target.result);  // Log the data sent
     }
   };
 }
-
