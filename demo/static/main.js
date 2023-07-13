@@ -42,12 +42,11 @@ document.getElementById('end').addEventListener('click', function() {
     document.body.style.backgroundColor = '#ffffff';            //更改页面背景提示用户
   }
   isRecording = 0;
-  // Add closing socket on 'end' click 
-  // if(socket.readyState === WebSocket.OPEN){
-  //   socket.close();
-  // }
   
+  // Send a special message to indicate that recording has ended
+  ws.send("STOP_RECORDING");
 });
+
 
 /**点击开始录制按钮 */
 document.getElementById('start').addEventListener('click', function() {
@@ -74,8 +73,6 @@ function handleStream(stream) {
     console.log('Data sent: ', event.data);  // Log the data sent
   });
 }
-
-
 
 /**通过socket发送数据 */
 function sendData(data) {
