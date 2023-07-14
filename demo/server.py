@@ -3,24 +3,36 @@ from flask_sockets import Sockets
 import whisper
 from pydub import AudioSegment
 import os
+import threading
 
 app = Flask(__name__)
 sockets = Sockets(app)
 
-model = whisper.load_model("base")
+model = whisper.load_model("tiny")
 
-def save_as_mp3(data,filename, type):
-    # Save the data as a WebM file
-    tempfile = ""
-    tempformatt = ""
-    if(type == "audio/webm"):
-        tempfile = "temp.webm"
-        tempformatt = "webm"
-        
-    else:
-        tempfile = "temp.mp4"
-        tempformatt = "mp4"
+clockFlag = None
+
+
+def clock():
+    global clockFlag
+    print("clock")
+    clockFlag = 1
     
+timer = threading.Timer(1, clock)
+
+def save_as_mp3(data,filename):
+    # Save the data as a WebM file
+    # tempfile = ""
+    # tempformatt = ""
+    # if(type == "audio/webm"):
+    #     tempfile = "temp.webm"
+    #     tempformatt = "webm"
+        
+    # else:
+    #     tempfile = "temp.mp4"
+    #     tempformatt = "mp4"
+    tempfile = "temp.webm"
+    tempformatt = "webm"
     with open(tempfile, 'wb') as f:
         f.write(data)
 
@@ -28,6 +40,20 @@ def save_as_mp3(data,filename, type):
     audio = AudioSegment.from_file(tempfile, format=tempformatt)
     audio.export(filename, format='mp3')
     os.remove(tempfile)
+    #print("delete webm")
+
+def stitchMedia(filename):
+    output_music = None
+    if(os.path.exists('output.mp3')):
+        input_music_1 = AudioSegment.from_mp3("output.mp3")
+        input_music_2 = AudioSegment.from_mp3("seg.mp3")
+        output_music = input_music_1 + input_music_2
+    else:
+        output_music = AudioSegment.from_mp3("seg.mp3")
+        
+    output_music.export("output.mp3", format="mp3")
+    os.remove("seg.mp3")  
+
 
 # Dictionary to hold incoming audio data for each WebSocket
 ws_audio_data = {}
@@ -35,26 +61,42 @@ ws_audio_data = {}
 @sockets.route('/echo')
 def echo_socket(ws):
     global ws_audio_data
-
+    global clockFlag
+    global timer
     # Initialize a new list to hold the audio data for this WebSocket
     ws_audio_data[ws] = []
 
     while not ws.closed:
+
+        
         audio_data = ws.receive()
-        if audio_data == "STOP_RECORDING":
+        #print(clockFlag)
+        if(audio_data == "START_RECORDING"):
+            timer.start()
+        elif(audio_data == "STOP_RECORDING" or clockFlag == 1):
+            clockFlag = 0
             # Process the audio data if a "STOP_RECORDING" message is received
             full_audio_data = b''.join(ws_audio_data[ws])
-            dataType = ws.receive()
-            save_as_mp3(full_audio_data,"output.mp3",dataType)
+            del ws_audio_data[ws]
 
+
+
+            save_as_mp3(full_audio_data,"seg.mp3")
+
+            stitchMedia("seg.mp3")
             result = model.transcribe("output.mp3")
             print(result["text"])
             ws.send(result["text"])
 
             # Reset the audio data for this WebSocket
             ws_audio_data[ws] = []
-        elif audio_data is not None:
-            
+
+            if(audio_data == "STOP_RECORDING"):
+                timer.cancel()
+                clockFlag = 0
+
+
+        else:
             # Add the incoming audio data to the list for this WebSocket
             ws_audio_data[ws].append(audio_data)
 
@@ -79,9 +121,22 @@ def echo_socket(ws):
 def hello_world():
     return render_template("index.html")
 
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    os.remove("output.mp3")
+    
+
+
+
 if __name__ == '__main__':
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
     server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)
+    # empty_segment = AudioSegment.empty()
+    # empty_segment.export("output.mp3", format="mp3")
+    
+    clockFlag = 0
     print('server start')
     server.serve_forever()
+

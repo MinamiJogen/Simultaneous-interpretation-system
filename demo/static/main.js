@@ -19,7 +19,7 @@ window.onload = function() {
    	// 	.join('');
     // 将接收到的消息打印到console
     console.log('Received message from server: ', evt.data);
-    receivedData = receivedData + evt.data;         //本地储存(原数据16进制)
+    receivedData = evt.data;                                    //本地储存(原数据16进制)
     //receivedData = receivedData + evt.data.byteLength;         //本地储存(原数据长度)
     const content = document.getElementById('content');         //动态更新到页面
     //content.innerHTML = receivedData;
@@ -53,6 +53,8 @@ document.getElementById('start').addEventListener('click', function() {
       .then(stream => handleStream(stream))
       .catch(err => console.log('出现错误：', err));
     document.body.style.backgroundColor = '#40E0D0'; // 更改页面背景提示用户
+    ws.send("START_RECORDING");
+    console.log("Data sent: ","START_RECORDING")
   }
 });
 
@@ -67,9 +69,9 @@ function handleStream(stream) {
     // 处理停止录制后的操作
     document.body.style.backgroundColor = '#ffffff'; // 更改页面背景提示用户
     ws.send("STOP_RECORDING"); // Send a special message to indicate that recording has ended
-    ws.send(fileType);
+    //ws.send(fileType);
     console.log("Data sent: ", "STOP_RECORDING");
-    console.log("Data sent: ", fileType);
+    //console.log("Data sent: ", fileType);
   };
   mediaRecorder.addEventListener("dataavailable", event => {
     // 直接通过socket发送数据
@@ -78,7 +80,7 @@ function handleStream(stream) {
   });
 
 
-  mediaRecorder.start(10); // 每10 ms触发数据可用
+  mediaRecorder.start(100); // 每10 ms触发数据可用
 
 
 }
