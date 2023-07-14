@@ -3,6 +3,8 @@ var mediaRecorder;
 var ws;
 var receivedData = "";
 var enc;
+var fileType = "";
+
 
 /**页面初始化 */
 window.onload = function() {
@@ -40,11 +42,6 @@ document.getElementById('clean').addEventListener('click', function() {
 document.getElementById('end').addEventListener('click', function() {
   if(isRecording == 1){                                       
     mediaRecorder.stop();                                       //停止录音
-    mediaRecorder.onstop = function() {
-      // 处理停止录制后的操作
-      document.body.style.backgroundColor = '#ffffff'; // 更改页面背景提示用户
-    };
-    ws.send("STOP_RECORDING"); // Send a special message to indicate that recording has ended
   }
   isRecording = 0;
 });
@@ -63,14 +60,27 @@ document.getElementById('start').addEventListener('click', function() {
 function handleStream(stream) {
   isRecording = 1;
   // 创建新的MediaRecorder对象
-  mediaRecorder = new MediaRecorder(stream);
-  mediaRecorder.start(1000); // 每10 ms触发数据可用
-
+  mediaRecorder = new MediaRecorder(stream,{mimeType: 'audio/webm'});
+  fileType = mediaRecorder.mimeType;
+  console.log(mediaRecorder)
+  mediaRecorder.onstop = function() {
+    // 处理停止录制后的操作
+    document.body.style.backgroundColor = '#ffffff'; // 更改页面背景提示用户
+    ws.send("STOP_RECORDING"); // Send a special message to indicate that recording has ended
+    ws.send(fileType);
+    console.log("Data sent: ", "STOP_RECORDING");
+    console.log("Data sent: ", fileType);
+  };
   mediaRecorder.addEventListener("dataavailable", event => {
     // 直接通过socket发送数据
     ws.send(event.data);
     console.log('Data sent: ', event.data);  // Log the data sent
   });
+
+
+  mediaRecorder.start(10); // 每10 ms触发数据可用
+
+
 }
 
 /**通过socket发送数据 */

@@ -2,20 +2,32 @@ from flask import Flask,render_template
 from flask_sockets import Sockets
 import whisper
 from pydub import AudioSegment
+import os
 
 app = Flask(__name__)
 sockets = Sockets(app)
 
 model = whisper.load_model("base")
 
-def save_as_mp3(data, filename):
+def save_as_mp3(data,filename, type):
     # Save the data as a WebM file
-    with open('temp.mp4', 'wb') as f:
+    tempfile = ""
+    tempformatt = ""
+    if(type == "audio/webm"):
+        tempfile = "temp.webm"
+        tempformatt = "webm"
+        
+    else:
+        tempfile = "temp.mp4"
+        tempformatt = "mp4"
+    
+    with open(tempfile, 'wb') as f:
         f.write(data)
 
     # Convert the WebM file to MP3
-    audio = AudioSegment.from_file('temp.mp4', format='mp4')
+    audio = AudioSegment.from_file(tempfile, format=tempformatt)
     audio.export(filename, format='mp3')
+    os.remove(tempfile)
 
 # Dictionary to hold incoming audio data for each WebSocket
 ws_audio_data = {}
@@ -29,11 +41,11 @@ def echo_socket(ws):
 
     while not ws.closed:
         audio_data = ws.receive()
-        print(audio_data)
         if audio_data == "STOP_RECORDING":
             # Process the audio data if a "STOP_RECORDING" message is received
             full_audio_data = b''.join(ws_audio_data[ws])
-            save_as_mp3(full_audio_data, "output.mp3")
+            dataType = ws.receive()
+            save_as_mp3(full_audio_data,"output.mp3",dataType)
 
             result = model.transcribe("output.mp3")
             print(result["text"])
@@ -42,6 +54,7 @@ def echo_socket(ws):
             # Reset the audio data for this WebSocket
             ws_audio_data[ws] = []
         elif audio_data is not None:
+            
             # Add the incoming audio data to the list for this WebSocket
             ws_audio_data[ws].append(audio_data)
 
