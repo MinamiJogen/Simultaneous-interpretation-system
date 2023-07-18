@@ -5,6 +5,10 @@ from pydub import AudioSegment
 import os
 import threading
 from threading import Thread
+from multiprocessing import Process
+import time
+
+
 
 app = Flask(__name__)
 sockets = Sockets(app)
@@ -13,17 +17,25 @@ model = whisper.load_model("tiny")
 
 clockFlag = None                                                    #时钟线程与主线程沟通参数 
                                                                     #1=时钟中断主线程 0=主线程完成任务，等待时钟中断 2=时钟停止
-
 ws_audio_data = {}                                                  #存储不同websocket发送数据的缓存字典
+modelOnUse = False
+threadError = False
+mainString = ""
+
 
 #异步时钟函数，定时触发主线程执行翻译任务
-def clock():
+def clock(sec):
     global clockFlag
-    print("clock")
-    if(clockFlag == 0):
-        clockFlag = 1
-        timer = threading.Timer(2, clock)
-        timer.start()
+    global modelOnUse
+    time.sleep(sec)
+    while(True):
+        if(clockFlag == 2):
+            break
+        if(not modelOnUse):
+            print("clock")
+            clockFlag = 1
+        time.sleep(sec)
+
 
 #音频处理函数，将二进制数据处理为mp3格式
 def save_as_mp3(data,filename):
@@ -45,7 +57,6 @@ def save_as_mp3(data,filename):
     audio = AudioSegment.from_file(tempfile, format=tempformatt)    #webm -> mp3
                                                                 #这里进行第二次储存的时候报错，无法解码
     audio.export(filename, format='mp3')
-    os.remove(tempfile)
     #print("delete webm")
 
 #音频拼接函数，将当前处理mp3文件与历史mp3文件拼接
@@ -64,15 +75,28 @@ def stitchMedia(filename):
 
 #执行翻译任务的现成函数
 def newThread(data,ws):
-    print("operate")
-    full_audio_data = b''.join(data)
-    save_as_mp3(full_audio_data,"seg.mp3")                          #二进制数据转码mp3
-    stitchMedia("seg.mp3")                                          #音频合并
-    
-    result = model.transcribe("output.mp3")                         #调用翻译模型
-
-    print(result["text"])
-    ws.send(result["text"])                                         #socket回传结果
+    global modelOnUse
+    global threadError
+    global mainString
+    try:
+        while(modelOnUse):
+            continue
+        modelOnUse = True
+        T1 = time.time()
+        full_audio_data = b''.join(data)
+        save_as_mp3(full_audio_data,"output.mp3")                        #二进制数据转码mp3
+        #stitchMedia("seg.mp3")                                          #音频合并
+        print("operate")
+        result = model.transcribe("output.mp3")                         #调用翻译模型
+        os.remove("output.mp3")
+        print(mainString + result["text"])
+        T2 = time.time()
+        print("use time:{}".format(T2-T1))
+        ws.send(mainString + result["text"])                                       #socket回传结果
+        modelOnUse = False
+    except Exception as e:
+        print(e)
+        threadError = True
 
 
 
@@ -80,27 +104,40 @@ def newThread(data,ws):
 def echo_socket(ws):                                                
     global ws_audio_data
     global clockFlag
-    timer = threading.Timer(2, clock)
-    
+    global modelOnUse
+
     ws_audio_data[ws] = []
     while not ws.closed:
-        
+        if(threadError):
+            exit(0)
+
         audio_data = ws.receive()                                   #读取sockets数据
         #print(clockFlag)
-        if(audio_data == "START_RECORDING"):                        #音频开始传输
-            clockFlag = 0                                           
+        if(audio_data == "START_RECORDING"):                       #音频开始传输
+            clockFlag = 0 
+            timer = Thread(target = clock, args = (1,))
+            timer.daemon = True                                    
             timer.start()                                           #启动时钟
-        elif(audio_data == "STOP_RECORDING" or clockFlag == 1):     #音频停止传输或时钟中断
-            print("detect")
-            translate = Thread(target = newThread,args=(ws_audio_data[ws],ws))
-            translate.start()                                       #启动翻译线程
+        elif(clockFlag == 1):                                       #音频停止传输或时钟中断
             clockFlag = 0
-            del ws_audio_data[ws]                                   #清空缓存数据
-            ws_audio_data[ws] = []
-            if(audio_data == "STOP_RECORDING"):                     
-                clockFlag = 2
-            else:
-                ws_audio_data[ws].append(audio_data)
+            print("data length:{}".format(len(ws_audio_data[ws])))
+            translate = Thread(target = newThread,args=(ws_audio_data[ws],ws))
+            translate.daemon = True
+            translate.start()                                 
+            # translate = Process(target = newThread, args=(ws_audio_data[ws],ws)) #启动翻译线程
+            # translate.start()
+            ws_audio_data[ws].append(audio_data)
+        elif(audio_data == "STOP_RECORDING"):                  
+            clockFlag = 2
+            print("detect")
+            print("data length:{}".format(len(ws_audio_data[ws])))
+
+            translate = Thread(target = newThread,args=(ws_audio_data[ws],ws))
+            translate.start()
+                                                
+            # translate = Process(target = newThread, args=(ws_audio_data[ws],ws)) #启动翻译线程
+            # translate.start()
+
 
         else:
             ws_audio_data[ws].append(audio_data)                    #将sockets数据存入缓存
