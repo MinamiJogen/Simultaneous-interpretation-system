@@ -1,4 +1,4 @@
-var isRecording = 0;
+var isRecording = 0;      //标识录制状态函数。0：录制未开启 1：录制开启
 var mediaRecorder;
 var ws;
 var receivedData = "";
@@ -8,22 +8,16 @@ var fileType = "";
 
 /**页面初始化 */
 window.onload = function() {
-  //var enc = new TextEncoder();                                  //转码器
 
   ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
   console.log('socket set',ws);
   
-  ws.onmessage = function(evt) {
-    // decodedData = Array.prototype.map                             //解码->16进制
-   	// 	.call(new Uint8Array(evt.data), x => ('00' + x.toString(16)).slice(-2))
-   	// 	.join('');
-    // 将接收到的消息打印到console
+  ws.onmessage = function(evt) {                                //socket监听信息传入
+
     console.log('Received message from server: ', evt.data);
-    receivedData = evt.data;                                    //本地储存(原数据16进制)
-    //receivedData = receivedData + evt.data.byteLength;         //本地储存(原数据长度)
-    const content = document.getElementById('content');         //动态更新到页面
-    //content.innerHTML = receivedData;
-    content.innerHTML = receivedData;
+    receivedData = evt.data;                                        //储存到本地
+    const content = document.getElementById('content');             //动态更新到页面
+    content.innerHTML = receivedData;                       
   };
 
 
@@ -33,9 +27,13 @@ window.onload = function() {
 
 /**点击清除内容按钮 */
 document.getElementById('clean').addEventListener('click', function() {
+  if(isRecording != 0){
+    return;
+  }
   receivedData = "";                                            //清空本地储存的数据
   const content = document.getElementById('content');           //动态更新到页面
   content.innerHTML = receivedData;
+  ws.send("RESET")                                              //提醒后端清除数据
 });
 
 /**点击停止录制按钮 */
@@ -65,22 +63,23 @@ function handleStream(stream) {
   mediaRecorder = new MediaRecorder(stream,{mimeType: 'audio/webm'});
   fileType = mediaRecorder.mimeType;
   console.log(mediaRecorder)
-  mediaRecorder.onstop = function() {
-    // 处理停止录制后的操作
-    document.body.style.backgroundColor = '#ffffff'; // 更改页面背景提示用户
-    ws.send("STOP_RECORDING"); // Send a special message to indicate that recording has ended
+  mediaRecorder.onstop = function() {                           //mediaRecorder监听录制停止
+
+    document.body.style.backgroundColor = '#ffffff';                // 更改页面背景提示用户
+    ws.send("STOP_RECORDING");                                      // 提醒后端停止录制
     //ws.send(fileType);
     console.log("Data sent: ", "STOP_RECORDING");
     //console.log("Data sent: ", fileType);
   };
-  mediaRecorder.addEventListener("dataavailable", event => {
-    // 直接通过socket发送数据
-    ws.send(event.data);
-    console.log('Data sent: ', event.data);  // Log the data sent
+  mediaRecorder.addEventListener("dataavailable", event => {    //mediaRecorder监听数据可用
+    
+    // ws.send(event.data);                                            
+    // console.log('Data sent: ', event.data);
+    sendData(event.data);
   });
 
 
-  mediaRecorder.start(100); // 每10 ms触发数据可用
+  mediaRecorder.start(100);                                     // 每100 ms触发数据可用
 
 
 }
@@ -92,7 +91,7 @@ function sendData(data) {
   reader.onloadend = function (evt) { // 监听reader完成读取
     if (evt.target.readyState == FileReader.DONE) { // DONE == 2
       ws.send(evt.target.result);
-      console.log('Data sent: ', evt.target.result);  // Log the data sent
+      console.log('Data sent: ', evt.target.result);
     }
   };
 }
