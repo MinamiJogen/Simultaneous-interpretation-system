@@ -104,8 +104,8 @@ def newThread(data,ws,flag):
         save_as_mp3(full_audio_data,"output.mp3")                       #二进制数据转码mp3
         #stitchMedia("seg.mp3")                                         #音频合并
         print("operate")
-        result = model.transcribe("output.mp3")                         #调用识别模型，返回结果
-        os.remove("output.mp3")
+        result = model.transcribe("temp.webm")                         #调用识别模型，返回结果
+        os.remove("temp.webm")
         print(mainString + result["text"])                              #结束计时
         T2 = time.time()
         print("use time:{}".format(T2-T1))                              #打印翻译模型相应时间
@@ -166,6 +166,7 @@ def echo_socket(ws):
 @app.route('/')
 def hello_world():
     return render_template("index.html")
+
 
 @app.errorhandler(Exception)
 def handle_exception(e):                                           #处理服务器异常函数，删除所有临时数据
