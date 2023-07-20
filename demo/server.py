@@ -167,7 +167,6 @@ def echo_socket(ws):
 def hello_world():
     return render_template("index.html")
 
-
 @app.errorhandler(Exception)
 def handle_exception(e):                                           #处理服务器异常函数，删除所有临时数据
     if(os.path.exists('output.mp3')):

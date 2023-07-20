@@ -66,9 +66,11 @@ function handleStream(stream) {
   mediaRecorder.onstop = function() {                           //mediaRecorder监听录制停止
 
     document.body.style.backgroundColor = '#ffffff';                // 更改页面背景提示用户
-    ws.send("STOP_RECORDING");                                      // 提醒后端停止录制
-    //ws.send(fileType);
-    console.log("Data sent: ", "STOP_RECORDING");
+    setTimeout(function() {
+      ws.send("STOP_RECORDING");                                      // 提醒后端停止录制
+      //ws.send(fileType);
+      console.log("Data sent: ", "STOP_RECORDING");},100);
+    
     //console.log("Data sent: ", fileType);
   };
   mediaRecorder.addEventListener("dataavailable", event => {    //mediaRecorder监听数据可用
