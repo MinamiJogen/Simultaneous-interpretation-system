@@ -9,7 +9,7 @@ var fileType = "";
 /**页面初始化 */
 window.onload = function() {
 
-  ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
+  ws = new WebSocket("ws://wetalk.asia/echo");               //建立socket
   console.log('socket set',ws);
   
   ws.onmessage = function(evt) {                                //socket监听信息传入

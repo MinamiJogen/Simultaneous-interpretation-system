@@ -183,7 +183,7 @@ def handle_exception(e):                                           #处理服务
 if __name__ == '__main__':
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
-    server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
+    server = pywsgi.WSGIServer(('127.0.0.1', 8000), app, handler_class=WebSocketHandler)#设立socket端口
     # empty_segment = AudioSegment.empty()
     # empty_segment.export("output.mp3", format="mp3")
     print('server start')           
