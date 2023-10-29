@@ -81,7 +81,7 @@ function handleStream(stream) {
   });
 
 
-  mediaRecorder.start(100);                                     // 每100 ms触发数据可用
+  mediaRecorder.start(200);                                     // 每500 ms触发数据可用
 
 
 }

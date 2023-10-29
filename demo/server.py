@@ -8,6 +8,15 @@ import threading
 from threading import Thread
 from multiprocessing import Process
 import time
+import traceback
+import sys
+import ffmpeg
+
+
+
+from zhpr.predict import DocumentDataset,merge_stride,decode_pred
+from transformers import AutoModelForTokenClassification,AutoTokenizer
+from torch.utils.data import DataLoader
 
 
 
@@ -24,13 +33,66 @@ onPosProcess = False                                                #True：正�
 threadError = False                                                 #True：线程报错
 mainString = ""                                                     #历史识别内容
 nowString = ""                                                      #当前识别内容
+CutSeconde = 0
+Cutted = False
+
+
+count = 0
+
+
+####标点模型所需参数
+window_size = 256
+step = 200
+
+model_name = 'p208p2002/zh-wiki-punctuation-restore'
+pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+####
+
+head = ""
+
+
+
+
+# 标点模型所需函数
+def predict_step(batch,model,tokenizer):
+        batch_out = []
+        batch_input_ids = batch
+
+        encodings = {'input_ids': batch_input_ids}
+        output = model(**encodings)
+
+        predicted_token_class_id_batch = output['logits'].argmax(-1)
+        for predicted_token_class_ids, input_ids in zip(predicted_token_class_id_batch, batch_input_ids):
+            out=[]
+            tokens = tokenizer.convert_ids_to_tokens(input_ids)
+            
+            # compute the pad start in input_ids
+            # and also truncate the predict
+            # print(tokenizer.decode(batch_input_ids))
+            input_ids = input_ids.tolist()
+            try:
+                input_id_pad_start = input_ids.index(tokenizer.pad_token_id)
+            except:
+                input_id_pad_start = len(input_ids)
+            input_ids = input_ids[:input_id_pad_start]
+            tokens = tokens[:input_id_pad_start]
+    
+            # predicted_token_class_ids
+            predicted_tokens_classes = [model.config.id2label[t.item()] for t in predicted_token_class_ids]
+            predicted_tokens_classes = predicted_tokens_classes[:input_id_pad_start]
+
+            for token,ner in zip(tokens,predicted_tokens_classes):
+                out.append((token,ner))
+            batch_out.append(out)
+        return batch_out
 
 #异步时钟函数，定时提醒主线程执行翻译任务
 def clock(sec):
     global clockFlag
     global modelOnUse
     global onPosProcess
-    time.sleep(sec+1)
+    time.sleep(sec)
     while(True):                                                    #定时检查状态
         if(clockFlag == 2):                                         #前端停止录制，结束时钟
             print("clockend")
@@ -53,26 +115,45 @@ def pos_clock(data,ws):
     translate.daemon = True
     translate.start()
     
-#音频处理函数，将二进制数据处理为mp3格式
-def save_as_mp3(data,filename):
-    # Save the data as a WebM file
-    # tempfile = ""
-    # tempformatt = ""
-    # if(type == "audio/webm"):
-    #     tempfile = "temp.webm"
-    #     tempformatt = "webm"
-        
-    # else:
-    #     tempfile = "temp.mp4"
-    #     tempformatt = "mp4"
-    tempfile = "temp.webm"
-    tempformatt = "webm"
+#音频处理函数，将二进制数据处理为webm格式
+def save_as_webm(data):
+    global count
+    global Cutted
+
+    lenn = len(data)
+    data = b''.join(data)
+
+    tempfile = "temp{}.wav".format(count)
+
     with open(tempfile, 'wb') as f:                                 #将二进制数据按原格式储存为临时文件（webm）
         f.write(data)
+        f.close()
+    
+    part = ""
+    with open(tempfile,"rb") as f:
+        audio = AudioSegment.from_file(tempfile)
+        if(Cutted):
+            part = audio[200:len(audio)]
+        else:
+            part = audio
+    os.remove(tempfile)
+    part.export(tempfile)
+    return lenn 
 
-    audio = AudioSegment.from_file(tempfile, format=tempformatt)    #webm -> mp3
-    audio.export(filename, format='mp3')
-    #print("delete webm")
+
+def CutMedia(ws,second):
+
+    global ws_audio_data
+    global Cutted
+    global head
+
+    print(f"current length:{len(ws_audio_data[ws])}")
+    print(f"cut length:{second}")
+    del ws_audio_data[ws][0:second]
+    ws_audio_data[ws].insert(0,head)
+    Cutted = True
+    print("cut finish")
+
 
 #音频拼接函数，将当前处理mp3文件与历史mp3文件拼接(未使用)
 def stitchMedia(filename):
@@ -88,6 +169,7 @@ def stitchMedia(filename):
     output_music.export("output.mp3", format="mp3")                 #储存结果文件
     os.remove("seg.mp3")  
 
+
 #执行翻译任务的线程函数
 def newThread(data,ws,flag):
 
@@ -96,27 +178,60 @@ def newThread(data,ws,flag):
     global mainString
     global nowString
     global onPosProcess
+    global CutSeconde
+    global Cutted
+    global count
     try:
         while(modelOnUse):                                              #等待模型可用（逻辑上不需要，以防万一）
             continue
         modelOnUse = True                                               #占用模型
         T1 = time.time()                                                #开始计时
-        full_audio_data = b''.join(data)
-        save_as_mp3(full_audio_data,"output.mp3")                       #二进制数据转码mp3
+        
+        
+        audioLen = save_as_webm(data)                                   #二进制数据转码mp3
         #stitchMedia("seg.mp3")                                         #音频合并
-        print("operate")
-        result = model.transcribe("temp.webm")                         #调用识别模型，返回结果
-        os.remove("temp.webm")
-        print(mainString + result["text"])                              #结束计时
+        print(f"operate: temp{count}.wav")
+        result = model.transcribe("temp{}.wav".format(count))                         #调用识别模型，返回结果
+        os.remove("temp{}.wav".format(count))
+        count+=1
+                          
+        T2 = time.time()                                                #结束计时
+        print("recognition time:{}".format(T2-T1))                              #打印翻译模型相应时间
+        result = result["text"]
+        
+        ############################################################################添加标点符号
+        T1 = time.time()
+        # result = "我爱抽电子烟特别是瑞克五代"
+        dataset = DocumentDataset(result,window_size=window_size,step=step)
+        dataloader = DataLoader(dataset=dataset,shuffle=False,batch_size=5)
+        model_pred_out = []
+        for batch in dataloader:
+            batch_out = predict_step(batch,pmodel,tokenizer)
+            for out in batch_out:
+                model_pred_out.append(out)
+
+        merge_pred_result = merge_stride(model_pred_out,step)
+
+        merge_pred_result_deocde = decode_pred(merge_pred_result)
+
+        result = ''.join(merge_pred_result_deocde)
         T2 = time.time()
-        print("use time:{}".format(T2-T1))                              #打印翻译模型相应时间
-        ws.send(mainString + result["text"])                            #socket传输结果（历史识别内容+当前翻译内容）
-        nowString = result["text"]                                      #存储识别结果到当前翻译内容
+        print("punctuation time:{}".format(T2-T1))
+        print(f"result:{result}")
+        ############################################################################
+        ws.send(mainString + result)                                    #socket传输结果（历史识别内容+当前翻译内容）
+        nowString = result                                              #存储识别结果到当前翻译内容
+        if(result.find("。") != 0):
+            mainString += "\n"
+            mainString += nowString
+            #CutSeconde = audioLen
+            CutMedia(ws,audioLen)
+
         modelOnUse = False                                              #解锁模型
         if(flag == 1):                                                  #如果是后处理线程调用该线程，标志后线程处理结束
             onPosProcess = False
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         threadError = True
 
 #websocket端口函数
@@ -127,42 +242,70 @@ def echo_socket(ws):
     global modelOnUse
     global mainString
     global nowString
+    global CutSeconde
+    global head
+    global count
+    global Cutted
     ws_audio_data[ws] = []                                          #存储websocket传入的二进制数据的缓存数组
+
+
     while not ws.closed:                                            #死循环
         if(threadError):                                                #若某一线程报错，中断服务器
             exit(0)
 
         audio_data = ws.receive()                                       #读取sockets数据，此为阻塞调用（等待直到有新数据传入）
+
         #print(clockFlag)
         if(audio_data == "START_RECORDING"):                            #1. 前端提醒音频开始传输
             mainString = mainString + nowString                                 #更新历史识别内容（历史识别内容 = 历史识别内容 + 当前识别内容）
             clockFlag = 0                                                       #提醒时钟线程主线程就绪
-            timer = Thread(target = clock, args = (1,))                 
+
+            head = ws.receive()
+            # print(f"head type{type(head)}")
+            ws_audio_data[ws].append(head)
+
+            timer = Thread(target = clock, args = (2,))                 
             timer.daemon = True                                    
             timer.start()                                                       #启动时钟线程
         elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
-            print("detect")                                       
+            ws_audio_data[ws].append(audio_data)
+            print("detect clock")                                       
             clockFlag = 0
             print("data length:{}".format(len(ws_audio_data[ws])))
             translate = Thread(target = newThread,args=(ws_audio_data[ws],ws,0))
             translate.daemon = True
             translate.start()                                                   #主线程调用翻译任务线程   
-            ws_audio_data[ws].append(audio_data)
+            
+            if(CutSeconde != 0):
+                print("cut start")
+                ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
+                CutMedia(ws,CutSeconde)
+                CutSeconde = 0                                                   #清空当前识别内容
+
         elif(audio_data == "STOP_RECORDING"):                           #3. 前端提醒音频停止传输    
+            print("stop")
             clockFlag = 2                                                       #提醒时钟关闭
-            posProcess = Thread(target=pos_clock,args=(ws_audio_data[ws],ws))
-            posProcess.daemon = True
-            posProcess.start()                                                  #开启后处理线程，处理尚未处理的数据
+            # posProcess = Thread(target=pos_clock,args=(ws_audio_data[ws],ws))
+            # posProcess.daemon = True
+            # posProcess.start()                                                  #开启后处理线程，处理尚未处理的数据
+
             del ws_audio_data[ws]                                               #清空缓存数组
             ws_audio_data[ws] = []
+            Cutted = False
+
         elif(audio_data == "RESET"):                                    #4. 前端提醒清除目前记录
             print("reset")
             del ws_audio_data[ws]                                               #清空缓存数组
             ws_audio_data[ws] = []
             mainString = ""                                                     #清空历史识别内容 
-            nowString = ""                                                      #清空当前识别内容
-        else:                                                           #5. 正常的数据传入
+            nowString = ""  
+        else:                                                                #5. 正常的数据传入
             ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
+            # if(CutSeconde != 0):
+            #     print("cut start")
+            #     ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
+            #     CutMedia(ws,CutSeconde)
+            #     CutSeconde = 0                                                   #清空当前识别内容
 
 @app.route('/')
 def hello_world():
@@ -176,7 +319,7 @@ def handle_exception(e):                                           #处理服务
     if(os.path.exists('temp.webm')):
         os.remove("temp.webm")
     return ""
-    
+
 
 
 
@@ -186,6 +329,6 @@ if __name__ == '__main__':
     server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
     # empty_segment = AudioSegment.empty()
     # empty_segment.export("output.mp3", format="mp3")
-    print('server start')           
+    print('server start')
     server.serve_forever()                                         #开启服务器
 
