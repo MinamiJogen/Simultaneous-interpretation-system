@@ -4,13 +4,12 @@ from flask_sockets import Sockets
 import whisper
 from pydub import AudioSegment
 import os
-import threading
+
 from threading import Thread
 from multiprocessing import Process
 import time
 import traceback
-import sys
-import ffmpeg
+
 
 
 
