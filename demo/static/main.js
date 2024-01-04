@@ -12,6 +12,15 @@ window.onload = function() {
   ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
   console.log('socket set',ws);
   
+  navigator.mediaDevices.getUserMedia({ audio: true })
+  .then(function(stream) {
+    console.log('用户已授权使用麦克风');
+  })
+  .catch(function(err) {
+    console.log('用户拒绝了麦克风权限请求', err);
+  });
+
+
   ws.onmessage = function(evt) {                                //socket监听信息传入
 
     console.log('Received message from server: ', evt.data);

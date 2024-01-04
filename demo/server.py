@@ -4,14 +4,12 @@ from flask_sockets import Sockets
 import whisper
 from pydub import AudioSegment
 import os
+import torch
 
 from threading import Thread
 from multiprocessing import Process
 import time
 import traceback
-
-
-
 
 from zhpr.predict import DocumentDataset,merge_stride,decode_pred
 from transformers import AutoModelForTokenClassification,AutoTokenizer
@@ -19,10 +17,15 @@ from torch.utils.data import DataLoader
 
 
 
+
 app = Flask(__name__)
 sockets = Sockets(app)
 
-model = whisper.load_model("tiny")
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"Using device:{DEVICE}")
+model = whisper.load_model('small', device=DEVICE)
+
 
 clockFlag = None                                                    #时钟线程与主线程用于沟通的参数 
                                                                         #1：时钟中断主线程 0：主线程完成任务，等待时钟中断 2：时钟停止
@@ -88,18 +91,24 @@ def predict_step(batch,model,tokenizer):
 
 #异步时钟函数，定时提醒主线程执行翻译任务
 def clock(sec):
+    print("clock set")
     global clockFlag
     global modelOnUse
     global onPosProcess
-    time.sleep(sec)
+    time.sleep(min(2,sec))
     while(True):                                                    #定时检查状态
-        if(clockFlag == 2):                                         #前端停止录制，结束时钟
-            print("clockend")
+        if(clockFlag == 2 or clockFlag == None):                                         #前端停止录制，结束时钟
+            print("clock end")
             break
         if(not modelOnUse and not onPosProcess):                    #模型未占用，后处理未启用
             print("clock")
             clockFlag = 1                                           #提醒主线程执行翻译
-        time.sleep(sec)
+        
+        time.sleep(sec/2)
+        if(clockFlag == 2 or clockFlag == None):                                         #前端停止录制，结束时钟
+            print("clock end")
+            break
+        time.sleep(sec/2)
 
 #停止录制后，翻译尚未处理数据的线程
 def pos_clock(data,ws):
@@ -200,7 +209,7 @@ def newThread(data,ws,flag):
         
         ############################################################################添加标点符号
         T1 = time.time()
-        # result = "我爱抽电子烟特别是瑞克五代"
+        #result = "我爱抽电子烟特别是瑞克五代"
         dataset = DocumentDataset(result,window_size=window_size,step=step)
         dataloader = DataLoader(dataset=dataset,shuffle=False,batch_size=5)
         model_pred_out = []
@@ -218,17 +227,23 @@ def newThread(data,ws,flag):
         print("punctuation time:{}".format(T2-T1))
         print(f"result:{result}")
         ############################################################################
-        ws.send(mainString + result)                                    #socket传输结果（历史识别内容+当前翻译内容）
-        nowString = result                                              #存储识别结果到当前翻译内容
-        if(result.find("。") != 0):
-            mainString += "\n"
-            mainString += nowString
-            #CutSeconde = audioLen
-            CutMedia(ws,audioLen)
 
-        modelOnUse = False                                              #解锁模型
-        if(flag == 1):                                                  #如果是后处理线程调用该线程，标志后线程处理结束
-            onPosProcess = False
+        try:
+            ws.send(mainString + result)                                    #socket传输结果（历史识别内容+当前翻译内容）
+            nowString = result                                              #存储识别结果到当前翻译内容
+        except Exception as e:
+            print(e)
+        else:
+            if(result.find("。") != 0):
+                mainString += "\n"
+                mainString += nowString
+                #CutSeconde = audioLen
+                CutMedia(ws,audioLen)
+
+            modelOnUse = False                                              #解锁模型
+            if(flag == 1):                                                  #如果是后处理线程调用该线程，标志后线程处理结束
+                onPosProcess = False
+        
     except Exception as e:
         traceback.print_exc()
         threadError = True
@@ -245,8 +260,16 @@ def echo_socket(ws):
     global head
     global count
     global Cutted
-    ws_audio_data[ws] = []                                          #存储websocket传入的二进制数据的缓存数组
 
+
+    print("ws set")
+
+    init()
+    ws_audio_data[ws] = []                                          #存储websocket传入的二进制数据的缓存数组
+    Cutted = False
+    mainString = ""
+    nowString = ""
+    clockFlag = None
 
     while not ws.closed:                                            #死循环
         if(threadError):                                                #若某一线程报错，中断服务器
@@ -256,6 +279,7 @@ def echo_socket(ws):
 
         #print(clockFlag)
         if(audio_data == "START_RECORDING"):                            #1. 前端提醒音频开始传输
+            print("start recording")
             mainString = mainString + nowString                                 #更新历史识别内容（历史识别内容 = 历史识别内容 + 当前识别内容）
             clockFlag = 0                                                       #提醒时钟线程主线程就绪
 
@@ -263,7 +287,7 @@ def echo_socket(ws):
             # print(f"head type{type(head)}")
             ws_audio_data[ws].append(head)
 
-            timer = Thread(target = clock, args = (2,))                 
+            timer = Thread(target = clock, args = (1,))                 
             timer.daemon = True                                    
             timer.start()                                                       #启动时钟线程
         elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
@@ -271,6 +295,7 @@ def echo_socket(ws):
             print("detect clock")                                       
             clockFlag = 0
             print("data length:{}".format(len(ws_audio_data[ws])))
+
             translate = Thread(target = newThread,args=(ws_audio_data[ws],ws,0))
             translate.daemon = True
             translate.start()                                                   #主线程调用翻译任务线程   
@@ -305,6 +330,32 @@ def echo_socket(ws):
             #     ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
             #     CutMedia(ws,CutSeconde)
             #     CutSeconde = 0                                                   #清空当前识别内容
+    print("ws closed")
+    init()
+
+def init():
+    global ws_audio_data
+    global clockFlag
+    global modelOnUse
+    global mainString
+    global nowString
+    global CutSeconde
+    global head
+    global count
+    global Cutted
+    global modelOnUse
+    global onPosProcess
+    global threadError
+
+    ws_audio_data = {}                                         
+    Cutted = False
+    mainString = ""
+    nowString = ""
+    clockFlag = None
+    modelOnUse = False
+    modelOnUse = False                                                  #True：模型对象正在使用
+    onPosProcess = False                                                #True：正在进行后处理
+    threadError = False                                                 #True：线程报错
 
 @app.route('/')
 def hello_world():
@@ -325,7 +376,7 @@ def handle_exception(e):                                           #处理服务
 if __name__ == '__main__':
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
-    server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
+    server = pywsgi.WSGIServer(('127.0.0.1', 8080), app, handler_class=WebSocketHandler)#设立socket端口
     # empty_segment = AudioSegment.empty()
     # empty_segment.export("output.mp3", format="mp3")
     print('server start')
