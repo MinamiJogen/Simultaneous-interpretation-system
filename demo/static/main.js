@@ -9,6 +9,9 @@ var fileType = "";
 /**页面初始化 */
 window.onload = function() {
 
+  document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
+
+
   ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
   console.log('socket set',ws);
   
@@ -23,10 +26,18 @@ window.onload = function() {
 
   ws.onmessage = function(evt) {                                //socket监听信息传入
 
-    console.log('Received message from server: ', evt.data);
-    receivedData = evt.data;                                        //储存到本地
-    const content = document.getElementById('content');             //动态更新到页面
-    content.innerHTML = receivedData;                       
+
+    receivedData = JSON.parse(evt.data);                                       //储存到本地
+    console.log('Received message from server: ', receivedData);   
+    
+    const Hiscontent = document.getElementById('Hiscontent');             //动态更新到页面
+    const Nowcontent = document.getElementById('Nowcontent');
+    const Trancontent = document.getElementById('Trancontent');
+
+    Trancontent.innerHTML = receivedData.tranString;
+    Hiscontent.innerHTML = receivedData.mainString;
+    Nowcontent.innerHTML = receivedData.nowString;  
+    // console.log('Nowcontent',receivedData.nowString)
   };
 
 

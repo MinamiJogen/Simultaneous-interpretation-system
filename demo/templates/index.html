@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <html>
 <head>
   <title>WebRTC & WebSocket Audio Stream Demo</title>
@@ -10,6 +13,8 @@
   <button id="clean">清除内容</button>
   <script src="{{ url_for('static', filename='main.js') }}"></script>
 
-  <p id="content" style = "  word-wrap: break-word; max-width: 80%;"></p>
+  <p id="Hiscontent" style = "  word-wrap: break-word; max-width: 80%;"></p>
+  <p id="Nowcontent" style = "  word-wrap: break-word; max-width: 80%; color: gray"></p>
+  <p id="Trancontent" style = "  word-wrap: break-word; max-width: 80%; color: blue"></p>
 </body>
 </html>
