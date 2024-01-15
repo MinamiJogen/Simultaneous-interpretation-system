@@ -8,15 +8,17 @@ import os
 import torch
 import json
 import requests
-
-
+import numpy as np
 from threading import Thread
-from multiprocessing import Process
 import time
 import traceback
 
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
+
 from zhpr.predict import DocumentDataset,merge_stride,decode_pred
-from transformers import AutoModelForTokenClassification,AutoTokenizer
+from transformers import AutoModelForTokenClassification,AutoTokenizer,AutoProcessor, AutoModelForSpeechSeq2Seq
+from transformers import pipeline
 from torch.utils.data import DataLoader
 
 
@@ -26,10 +28,9 @@ app = Flask(__name__)
 sockets = Sockets(app)
 
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+# DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = 'cpu'
 print(f"Using device:{DEVICE}")
-model = whisper.load_model('medium', device=DEVICE)
-
 
 clockFlag = None                                                    #时钟线程与主线程用于沟通的参数 
                                                                         #1：时钟中断主线程 0：主线程完成任务，等待时钟中断 2：时钟停止
@@ -55,7 +56,10 @@ model_name = 'p208p2002/zh-wiki-punctuation-restore'
 pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 pmodel.to(DEVICE)
-####
+####识别模型
+# model = whisper.load_model('medium', device=DEVICE)
+model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
+# model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
 
 head = ""
 
@@ -116,7 +120,7 @@ def clock(sec):
     global clockFlag
     global modelOnUse
     global onPosProcess
-    time.sleep(sec)
+    time.sleep(max(1.5,sec))
     while(True):                                                    #定时检查状态
         if(clockFlag == 2 or clockFlag == None):                                         #前端停止录制，结束时钟
             print("clock end")
@@ -132,25 +136,40 @@ def clock(sec):
         time.sleep(sec/2)
 
 #停止录制后，翻译尚未处理数据的线程
-def pos_clock(data,ws):
+def pos_clock(ws):
     global modelOnUse
-    global onPosProcess
-    onPosProcess = True
-    print("posProcess")
-    while(modelOnUse):                                              #等待模型可用
+    global mainString
+    global nowString
+    global tranString
+
+    while(modelOnUse):
         continue
-    print("data length:{}".format(len(data)))
-    translate = Thread(target = newThread,args=(data,ws,1))         #开启识别任务线程
-    translate.daemon = True
-    translate.start()
+   
+    print(f"--------------------Pos_Thread-----------------------")
+    mainString = mainString + "\n"+nowString                                 #更新历史识别内容（历史识别内容 = 历史识别内容 + 当前识别内容）
+    nowString = ""
+    tranString += "\n"+translation(nowString)
+    wsSend(ws)
+
+    print(f"------------------------------------------------")
     
 #音频处理函数，将二进制数据处理为webm格式
 def save_as_webm(data):
     global count
     global Cutted
-
+    global threadError
     lenn = len(data)
-    data = b''.join(data)
+    try:
+        data = b''.join(data)
+    except Exception as e:
+
+        print(f"Data type:{type(data)}")
+        print(f"Data len:{len(data)}")
+        # print(f"Data:{data}")
+        traceback.print_exc()
+        threadError = True
+        raise e
+        
 
     tempfile = "temp{}.wav".format(count)
 
@@ -202,6 +221,10 @@ def punctuation(text):
 
     result = result.replace("[UNK]", ' ')
 
+    pun = {'。', '，', '！', ','}
+    result = [result[i] for i in range(len(result)) if not (result[i] in pun and result[i-1] in pun)]
+    result = ''.join(result)
+
     return result
 
 def translation(text):
@@ -211,19 +234,25 @@ def translation(text):
         'from':"zh-cn",
         'to':'en',
         'text':text,
-        'test':'false',
+
         'system':"UTI"
     }
 
-    response = requests.post(url,data=data)
+    response = requests.post(url,json=data)
     response_dic = response.json()
-    print(response_dic)
-    
+    # print(response_dic)
+
     status_code = response.status_code
-    print(status_code)
+    # print(status_code)
 
-    return response_dic['translation'][0]['decoded_debpe_detok'] 
+    return response_dic['translation'][0]['translated'][0]['text'] 
 
+def recognition(filename):
+
+    # text = model.transcribe(filename, language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)
+    text = model(filename)['text']
+
+    return text
 
 def audioSlice(filename):
 
@@ -238,10 +267,18 @@ def audioSlice(filename):
     # 切分音频文件
     chunks = split_on_silence(audio, min_silence_len=min_silence_len, silence_thresh=silence_thresh, keep_silence=keep_silence)
 
-    if(len(chunks) == 0):
-        return [audio]
-    else:
-        return chunks
+    # if(len(chunks) == 0):
+    #     return 
+    # else:
+    return chunks
+    
+def wsSend(ws):
+    global mainString, nowString, tranString
+
+    packet = {"mainString":mainString, "nowString":nowString, 'tranString':tranString}
+    
+    js_packet = json.dumps(packet)
+    ws.send(js_packet)
 
 #执行翻译任务的线程函数
 def newThread(data,ws,flag):
@@ -259,16 +296,27 @@ def newThread(data,ws,flag):
         while(modelOnUse):                                              #等待模型可用（逻辑上不需要，以防万一）
             continue
         modelOnUse = True                                               #占用模型
-
+        print(f"--------------------Thread{count}--------------------")
+        print(f"operate: temp{count}.wav")
 
         T1 = time.time()                                                #开始计时
         audioLen = save_as_webm(data)                                   #二进制数据转码mp3
 
-        print(f"operate: temp{count}.wav")
 
         audioList = audioSlice("temp{}.wav".format(count))
-        singled = audioList[len(audioList)-1]
         os.remove("temp{}.wav".format(count))
+
+        if(len(audioList) == 0):    
+            print("empty audio") 
+            CutMedia(ws,audioLen)       
+            modelOnUse = False  
+            nowString = "" 
+            wsSend(ws)
+            return 
+        
+
+        singled = audioList[len(audioList)-1]
+
 
 
         if(len(audioList) > 1):
@@ -281,16 +329,19 @@ def newThread(data,ws,flag):
             singledLen = singled.duration_seconds
 
             conbined.export("conb{}.wav".format(count))
-            conbinedResult = model.transcribe("conb{}.wav".format(count), language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)    
-            conbinedResult = punctuation(conbinedResult["text"])
+            conbinedResult = recognition(f"conb{count}.wav")
+            conbinedResult = punctuation(conbinedResult)
+            print(conbinedResult)
             conbinedResultTrans = translation(conbinedResult)
             mainString += "\n" + conbinedResult
             tranString += "\n" + conbinedResultTrans
-            os.remove("conb{}.wav".format(count))
 
-            singled.export("sing{}.wav".format(count))
-            singledResult = model.transcribe("sing{}.wav".format(count), language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)    
-            nowString = singledResult["text"]
+            singled.export("sing{}.wav".format(count))  
+            singledResult = recognition(f"conb{count}.wav")
+            nowString = singledResult
+
+
+            os.remove("conb{}.wav".format(count))
             os.remove("sing{}.wav".format(count))
             
             hh = 0.2 if(Cutted) else 0.0
@@ -300,8 +351,14 @@ def newThread(data,ws,flag):
         else:
             print("no Cut")
             singled.export("sing{}.wav".format(count))
-            singledResult = model.transcribe("sing{}.wav".format(count), language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)    
-            nowString = singledResult["text"]
+            singledResult = recognition(f"sing{count}.wav") 
+
+            if("一个市镇的一个市镇" in singledResult or
+               "一个建筑的一个建筑" in singledResult):
+                nowString = ""
+            else:
+                nowString = singledResult
+
             os.remove("sing{}.wav".format(count))
 
         T2 = time.time()
@@ -310,13 +367,10 @@ def newThread(data,ws,flag):
 
         print(f"main:{mainString}")
         print(f"now:{nowString}")
-        packet = {"mainString":mainString, "nowString":nowString, 'tranString':tranString}
-        js_packet = json.dumps(packet)
-        ws.send(js_packet)
+        wsSend(ws)
+        print(f"------------------------------------------------")
 
         modelOnUse = False                                              #解锁模型
-        if(flag == 1):                                                  #如果是后处理线程调用该线程，标志后线程处理结束
-            onPosProcess = False
         
     except Exception as e:
         traceback.print_exc()
@@ -353,7 +407,7 @@ def echo_socket(ws):
         #print(clockFlag)
         if(audio_data == "START_RECORDING"):                            #1. 前端提醒音频开始传输
             print("start recording")
-            mainString = mainString + nowString                                 #更新历史识别内容（历史识别内容 = 历史识别内容 + 当前识别内容）
+
             clockFlag = 0                                                       #提醒时钟线程主线程就绪
 
             head = ws.receive()
@@ -363,6 +417,7 @@ def echo_socket(ws):
             timer = Thread(target = clock, args = (0.5,))                 
             timer.daemon = True                                    
             timer.start()                                                       #启动时钟线程
+
         elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
             ws_audio_data[ws].append(audio_data)
             print("detect clock")                                       
@@ -382,13 +437,14 @@ def echo_socket(ws):
         elif(audio_data == "STOP_RECORDING"):                           #3. 前端提醒音频停止传输    
             print("stop")
             clockFlag = 2                                                       #提醒时钟关闭
-            # posProcess = Thread(target=pos_clock,args=(ws_audio_data[ws],ws))
+            # posProcess = Thread(target=pos_clock,args=(ws))
             # posProcess.daemon = True
             # posProcess.start()                                                  #开启后处理线程，处理尚未处理的数据
 
             del ws_audio_data[ws]                                               #清空缓存数组
             ws_audio_data[ws] = []
             Cutted = False
+
 
         elif(audio_data == "RESET"):                                    #4. 前端提醒清除目前记录
             print("reset")
@@ -438,20 +494,17 @@ def hello_world():
     return render_template("index.html")
 
 
-@app.errorhandler(Exception)
-def handle_exception(e):                                           #处理服务器异常函数，删除所有临时数据
-    if(os.path.exists('output.mp3')):
-        os.remove("output.mp3")
-    if(os.path.exists('temp.webm')):
-        os.remove("temp.webm")
-    return ""
-
-
+# @app.errorhandler(Exception)
+# def handle_exception(e):                                           #处理服务器异常函数，删除所有临时数据
+#     if(os.path.exists('output.mp3')):
+#         os.remove("output.mp3")
+#     if(os.path.exists('temp.webm')):
+#         os.remove("temp.webm")
+#     return ""
 
 
 if __name__ == '__main__':
-    from gevent import pywsgi
-    from geventwebsocket.handler import WebSocketHandler
+
     server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
     # empty_segment = AudioSegment.empty()
     # empty_segment.export("output.mp3", format="mp3")
