@@ -51,11 +51,11 @@ count = 0
 ####标点模型所需参数
 window_size = 256
 step = 200
-
 model_name = 'p208p2002/zh-wiki-punctuation-restore'
 pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 pmodel.to(DEVICE)
+
 ####识别模型
 # model = whisper.load_model('medium', device=DEVICE)
 model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
@@ -506,8 +506,6 @@ def hello_world():
 if __name__ == '__main__':
 
     server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
-    # empty_segment = AudioSegment.empty()
-    # empty_segment.export("output.mp3", format="mp3")
     print('server start')
     server.serve_forever()                                         #开启服务器
 
