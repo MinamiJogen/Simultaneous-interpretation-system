@@ -12,7 +12,7 @@ window.onload = function() {
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
 
-  ws = new WebSocket("wss://wetalk.asia:8080/echo");               //建立socket
+  ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
   console.log('socket set',ws);
   
   navigator.mediaDevices.getUserMedia({ audio: true })

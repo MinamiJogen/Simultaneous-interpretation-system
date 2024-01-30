@@ -63,7 +63,7 @@ model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",d
 
 head = ""
 
-
+INST = {"STOP_RECORDING", "RESET", "START_RECORDING"}
 
 
 # 标点模型所需函数
@@ -168,6 +168,10 @@ def save_as_webm(data):
         # print(f"Data:{data}")
         traceback.print_exc()
         threadError = True
+        for i in range(len(data)):
+            if( i != 0 and type(data[i]) != type(data[i-1])):
+                print(data[i])
+
         raise e
         
 
@@ -221,7 +225,7 @@ def punctuation(text):
 
     result = result.replace("[UNK]", ' ')
 
-    pun = {'。', '，', '！', ','}
+    pun = {'。', '，', '！', ',','？','?'}
     result = [result[i] for i in range(len(result)) if not (result[i] in pun and result[i-1] in pun)]
     result = ''.join(result)
 
@@ -313,17 +317,36 @@ def newThread(data,ws,flag):
             nowString = "" 
             wsSend(ws)
             return 
+
+        totaled = audioList[0]
+        for au in range(1,len(audioList)):
+            totaled = totaled + au
         
 
+        if(totaled.duration_seconds < 1.0):
+            print("audio too short")        
+            modelOnUse = False  
+            nowString = "" 
+            wsSend(ws)
+            return             
+
         singled = audioList[len(audioList)-1]
+        singled = None if(singled.duration_seconds < 1.0) else singled
 
 
-
+        conbined = None
         if(len(audioList) > 1):
-            print("Cut audio")
             conbined = audioList[0]
             for i in range(1,len(audioList) - 1):
                 conbined += audioList[i]
+        
+            conbined = None if(conbined.duration_seconds < 1.0) else conbined
+
+
+
+        if(conbined != None and singled != None):
+            print("Cut audio")
+
 
             conbinedLen = conbined.duration_seconds
             singledLen = singled.duration_seconds
@@ -331,13 +354,16 @@ def newThread(data,ws,flag):
             conbined.export("conb{}.wav".format(count))
             conbinedResult = recognition(f"conb{count}.wav")
             conbinedResult = punctuation(conbinedResult)
-            print(conbinedResult)
+            print(f"conbinedResult:{conbinedResult}")
             conbinedResultTrans = translation(conbinedResult)
             mainString += "\n" + conbinedResult
             tranString += "\n" + conbinedResultTrans
+            wsSend(ws)
+
 
             singled.export("sing{}.wav".format(count))  
-            singledResult = recognition(f"conb{count}.wav")
+            singledResult = recognition(f"sing{count}.wav")
+            print(f"singledResult:{singledResult}")
             nowString = singledResult
 
 
@@ -350,8 +376,8 @@ def newThread(data,ws,flag):
 
         else:
             print("no Cut")
-            singled.export("sing{}.wav".format(count))
-            singledResult = recognition(f"sing{count}.wav") 
+            totaled.export("total{}.wav".format(count))
+            singledResult = recognition(f"total{count}.wav") 
 
             if("一个市镇的一个市镇" in singledResult or
                "一个建筑的一个建筑" in singledResult):
@@ -359,7 +385,7 @@ def newThread(data,ws,flag):
             else:
                 nowString = singledResult
 
-            os.remove("sing{}.wav".format(count))
+            os.remove("total{}.wav".format(count))
 
         T2 = time.time()
         print("Process time:{}".format(T2-T1))
@@ -367,8 +393,9 @@ def newThread(data,ws,flag):
 
         print(f"main:{mainString}")
         print(f"now:{nowString}")
+        print(f"trans:{tranString}")
         wsSend(ws)
-        print(f"------------------------------------------------")
+        print(f"---------------ThreadEnd--------------------------")
 
         modelOnUse = False                                              #解锁模型
         
@@ -401,7 +428,7 @@ def echo_socket(ws):
     while not ws.closed:                                            #死循环
         if(threadError):                                                #若某一线程报错，中断服务器
             exit(0)
-
+            
         audio_data = ws.receive()                                       #读取sockets数据，此为阻塞调用（等待直到有新数据传入）
 
         #print(clockFlag)
@@ -416,24 +443,8 @@ def echo_socket(ws):
 
             timer = Thread(target = clock, args = (0.5,))                 
             timer.daemon = True                                    
-            timer.start()                                                       #启动时钟线程
-
-        elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
-            ws_audio_data[ws].append(audio_data)
-            print("detect clock")                                       
-            clockFlag = 0
-            print("data length:{}".format(len(ws_audio_data[ws])))
-
-            translate = Thread(target = newThread,args=(ws_audio_data[ws],ws,0))
-            translate.daemon = True
-            translate.start()                                                   #主线程调用翻译任务线程   
-            
-            if(CutSeconde != 0):
-                print("cut start")
-                ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
-                CutMedia(ws,CutSeconde)
-                CutSeconde = 0                                                   #清空当前识别内容
-
+            timer.start()       
+                                                            #启动时钟线程
         elif(audio_data == "STOP_RECORDING"):                           #3. 前端提醒音频停止传输    
             print("stop")
             clockFlag = 2                                                       #提醒时钟关闭
@@ -445,7 +456,6 @@ def echo_socket(ws):
             ws_audio_data[ws] = []
             Cutted = False
 
-
         elif(audio_data == "RESET"):                                    #4. 前端提醒清除目前记录
             print("reset")
             del ws_audio_data[ws]                                               #清空缓存数组
@@ -453,13 +463,22 @@ def echo_socket(ws):
             mainString = ""                                                     #清空历史识别内容 
             nowString = ""  
             tranString = ""
+
+
+        elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
+            ws_audio_data[ws].append(audio_data)
+            print("detect clock")                                       
+            clockFlag = 0
+            print("data length:{}".format(len(ws_audio_data[ws])))
+
+            translate = Thread(target = newThread,args=(ws_audio_data[ws],ws,0))
+            translate.daemon = True
+            translate.start()                                                   #主线程调用翻译任务线程   
+                                                           #清空当前识别内容
+        
         else:                                                                #5. 正常的数据传入
             ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
-            # if(CutSeconde != 0):
-            #     print("cut start")
-            #     ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
-            #     CutMedia(ws,CutSeconde)
-            #     CutSeconde = 0                                                   #清空当前识别内容
+
     print("ws closed")
     init()
 
@@ -491,7 +510,7 @@ def init():
 
 @app.route('/')
 def hello_world():
-    return render_template("index.html")
+    return render_template("index2.html")
 
 
 # @app.errorhandler(Exception)
