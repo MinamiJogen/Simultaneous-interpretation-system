@@ -522,9 +522,9 @@ def hello_world():
 #     return ""
 
 
-# if __name__ == '__main__':
-print('server starting')
-server = pywsgi.WSGIServer(('0.0.0.0', 8080), app, handler_class=WebSocketHandler)#设立socket端口
-print('server start')
-server.serve_forever()                                         #开启服务器
+if __name__ == '__main__':
+    print('server starting')
+    server = pywsgi.WSGIServer(('0.0.0.0', 8080), app, handler_class=WebSocketHandler)#设立socket端口
+    print('server start')
+    server.serve_forever()                                         #开启服务器
 
