@@ -251,11 +251,11 @@ def translation(text):
 
     return response_dic['translation'][0]['translated'][0]['text'] 
 
-def recognition(filename):
+def recognition(fileList):
 
     # text = model.transcribe(filename, language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)
-    text = model(filename)['text']
-
+    results = model(fileList)['text']
+    text = [result['text'] for result in results]
     return text
 
 def audioSlice(filename):
@@ -352,19 +352,24 @@ def newThread(data,ws,flag):
             singledLen = singled.duration_seconds
 
             conbined.export("conb{}.wav".format(count))
-            conbinedResult = recognition(f"conb{count}.wav")
+            singled.export("sing{}.wav".format(count))  
+
+            lists = [f"conb{count}.wav",f"sing{count}.wav"]
+            Results = recognition(lists)
+
+            conbinedResult = Results[0]
+            singledResult = Results[1]
+
             conbinedResult = punctuation(conbinedResult)
             print(f"conbinedResult:{conbinedResult}")
             conbinedResultTrans = translation(conbinedResult)
+            print(f"singledResult:{singledResult}")
+            nowString = singledResult
             mainString += "\n" + conbinedResult
             tranString += "\n" + conbinedResultTrans
             wsSend(ws)
 
 
-            singled.export("sing{}.wav".format(count))  
-            singledResult = recognition(f"sing{count}.wav")
-            print(f"singledResult:{singledResult}")
-            nowString = singledResult
 
 
             os.remove("conb{}.wav".format(count))
@@ -377,7 +382,7 @@ def newThread(data,ws,flag):
         else:
             print("no Cut")
             totaled.export("total{}.wav".format(count))
-            singledResult = recognition(f"total{count}.wav") 
+            singledResult = recognition([f"total{count}.wav"])[0]
 
             if("一个市镇的一个市镇" in singledResult or
                "一个建筑的一个建筑" in singledResult):
