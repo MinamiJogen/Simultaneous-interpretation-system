@@ -45,14 +45,20 @@ window.onload = function() {
   enc = new TextDecoder("utf-8");//解析arraybuffer
 };
 
+
 /**点击清除内容按钮 */
 document.getElementById('clean').addEventListener('click', function() {
   if(isRecording != 0){
     return;
   }
-  receivedData = "";                                            //清空本地储存的数据
-  const content = document.getElementById('content');           //动态更新到页面
-  content.innerHTML = receivedData;
+                                              //清空本地储存的数据
+  const Hiscontent = document.getElementById('Hiscontent');             //动态更新到页面
+  const Nowcontent = document.getElementById('Nowcontent');
+  const Trancontent = document.getElementById('Trancontent');
+
+  Trancontent.innerHTML = ""
+  Hiscontent.innerHTML = ""
+  Nowcontent.innerHTML = ""
   ws.send("RESET")                                              //提醒后端清除数据
 });
 

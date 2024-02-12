@@ -1,4 +1,3 @@
-# coding=utf-8
 from flask import Flask,render_template, g
 from flask_sockets import Sockets
 import whisper
@@ -527,4 +526,3 @@ if __name__ == '__main__':
     server = pywsgi.WSGIServer(('0.0.0.0', 8080), app, handler_class=WebSocketHandler)#设立socket端口
     print('server start')
     server.serve_forever()                                         #开启服务器
-

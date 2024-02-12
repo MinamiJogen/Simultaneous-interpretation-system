@@ -8,7 +8,7 @@ import torchaudio
 model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh")
 
 
-filename = 'conb1.wav'
+filename = 'sing59.wav'
 
 # # 使用pydub加载音频文件
 # audio = AudioSegment.from_file(filename)

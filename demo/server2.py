@@ -1,4 +1,3 @@
-# coding=utf-8
 from flask import Flask,render_template, g
 from flask_sockets import Sockets
 import whisper
@@ -63,7 +62,7 @@ model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",d
 
 head = ""
 
-INST = {"STOP_RECORDING", "RESET", "START_RECORDING"}
+# INST = {"STOP_RECORDING", "RESET", "START_RECORDING"}
 
 
 # 标点模型所需函数
@@ -207,6 +206,9 @@ def CutMedia(ws,second):
     print("cut finish")
 
 def punctuation(text):
+
+    return text
+
     #text = "我爱抽电子烟特别是瑞克五代"
     dataset = DocumentDataset(text,window_size=window_size,step=step)
     dataloader = DataLoader(dataset=dataset,shuffle=False,batch_size=5)
@@ -253,10 +255,16 @@ def translation(text):
 
 def recognition(fileList):
 
-    # text = model.transcribe(filename, language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)
-    results = model(fileList)['text']
-    text = [result['text'] for result in results]
-    return text
+    ### 并行操作
+    # # text = model.transcribe(filename, language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)
+    # results = model(fileList)
+    # text = [result['text'] for result in results]
+    # return text
+
+    ### 串行操作
+    result = model(fileList)['text']
+    return result
+
 
 def audioSlice(filename):
 
@@ -320,10 +328,10 @@ def newThread(data,ws,flag):
 
         totaled = audioList[0]
         for au in range(1,len(audioList)):
-            totaled = totaled + au
+            totaled = totaled + audioList[au]
         
 
-        if(totaled.duration_seconds < 1.0):
+        if(totaled.duration_seconds < 1.2):
             print("audio too short")        
             modelOnUse = False  
             nowString = "" 
@@ -331,7 +339,7 @@ def newThread(data,ws,flag):
             return             
 
         singled = audioList[len(audioList)-1]
-        singled = None if(singled.duration_seconds < 1.0) else singled
+        singled = None if(singled.duration_seconds < 1.2) else singled
 
 
         conbined = None
@@ -340,13 +348,12 @@ def newThread(data,ws,flag):
             for i in range(1,len(audioList) - 1):
                 conbined += audioList[i]
         
-            conbined = None if(conbined.duration_seconds < 1.0) else conbined
+            conbined = None if(conbined.duration_seconds < 1.2) else conbined
 
 
 
         if(conbined != None and singled != None):
-            print("Cut audio")
-
+            print("Two task")
 
             conbinedLen = conbined.duration_seconds
             singledLen = singled.duration_seconds
@@ -354,23 +361,64 @@ def newThread(data,ws,flag):
             conbined.export("conb{}.wav".format(count))
             singled.export("sing{}.wav".format(count))  
 
-            lists = [f"conb{count}.wav",f"sing{count}.wav"]
-            Results = recognition(lists)
+            #### 并行操作
 
-            conbinedResult = Results[0]
-            singledResult = Results[1]
+            # lists = [f"conb{count}.wav",f"sing{count}.wav"]
+            # Results = recognition(lists)
 
+            # conbinedResult = Results[0]
+            # singledResult = Results[1]
+
+            # conbinedResult = punctuation(conbinedResult)
+            # print(f"conbinedResult:{conbinedResult}")
+            # conbinedResultTrans = translation(conbinedResult)
+            # print(f"singledResult:{singledResult}")
+            # nowString = singledResult
+            # mainString += "\n" + conbinedResult
+            # tranString += "\n" + conbinedResultTrans
+            # wsSend(ws)
+
+            #### 串行操作
+
+            print("---")
+            print("task 1:")
+
+            print(f"conb recognition : {conbinedLen}")
+            t1 = time.time()
+            conbinedResult = recognition(f"conb{count}.wav")
+            t2 = time.time()
+            print(f"conb recognition time:{t2 - t1}")
+            nowString = conbinedResult
+            wsSend(ws)
+
+            print(f"conb punctuation ")
+            t1 = time.time()
             conbinedResult = punctuation(conbinedResult)
-            print(f"conbinedResult:{conbinedResult}")
-            conbinedResultTrans = translation(conbinedResult)
-            print(f"singledResult:{singledResult}")
-            nowString = singledResult
+            t2 = time.time()
+            print(f"conb punctuation time:{t2 - t1}")
+            nowString = ""
             mainString += "\n" + conbinedResult
+            wsSend(ws)
+
+            print(f"conb transaltion ")
+            t1 = time.time()
+            conbinedResultTrans = translation(conbinedResult)
+            t2 = time.time()
+            print(f"conb transaltion time:{t2 - t1}")
             tranString += "\n" + conbinedResultTrans
             wsSend(ws)
 
-
-
+            
+            print("task 2:")
+            print(f"sing recognition : {conbinedLen}")
+            t1 = time.time()
+            singledResult = recognition(f"sing{count}.wav")
+            t2 = time.time()
+            print(f"sing recognition time:{t2 - t1}")
+            nowString = singledResult
+            wsSend(ws)
+            print("---")
+            ###
 
             os.remove("conb{}.wav".format(count))
             os.remove("sing{}.wav".format(count))
@@ -380,16 +428,47 @@ def newThread(data,ws,flag):
             CutMedia(ws,audioLen)
 
         else:
-            print("no Cut")
+            print("One task")
             totaled.export("total{}.wav".format(count))
-            singledResult = recognition([f"total{count}.wav"])[0]
 
-            if("一个市镇的一个市镇" in singledResult or
-               "一个建筑的一个建筑" in singledResult):
+            print(f"total recognition : {conbinedLen}")
+            t1 = time.time()           
+            totaledResult = recognition([f"total{count}.wav"])[0]
+            t2 = time.time()
+            print(f"total recognition time:{t2 - t1}")
+
+            if("一个市镇的一个市镇" in totaledResult or
+               "一个建筑的一个建筑" in totaledResult):
                 nowString = ""
+
+
+            if(totaledResult == nowString and nowString != ""):
+                
+                nowString = totaledResult
+                wsSend(ws)
+
+                print(f"total punctuation ")
+                t1 = time.time() 
+                totaledResult = punctuation(totaledResult)
+                t2 = time.time()
+                print(f"total punctuation time:{t2 - t1}")
+                nowString = ""
+                mainString += "\n" + totaledResult
+                wsSend(ws)
+
+                print(f"total translation ")
+                t1 = time.time()              
+                totaledResultTrans = translation(totaledResult)
+                t2 = time.time()
+                print(f"total translation time:{t2 - t1}")
+                tranString += "\n" + totaledResultTrans
+                wsSend(ws)
+
+                CutMedia(ws,audioLen)
+
             else:
                 nowString = singledResult
-
+                wsSend(ws)
             os.remove("total{}.wav".format(count))
 
         T2 = time.time()
@@ -399,7 +478,6 @@ def newThread(data,ws,flag):
         print(f"main:{mainString}")
         print(f"now:{nowString}")
         print(f"trans:{tranString}")
-        wsSend(ws)
         print(f"---------------ThreadEnd--------------------------")
 
         modelOnUse = False                                              #解锁模型
@@ -423,12 +501,14 @@ def echo_socket(ws):
     global Cutted
 
     print("ws set")
+
+    if(modelOnUse):
+        while(modelOnUse):
+            continue
+
+
     init()
     ws_audio_data[ws] = []                                          #存储websocket传入的二进制数据的缓存数组
-    Cutted = False
-    mainString = ""
-    nowString = ""
-    clockFlag = None
 
     while not ws.closed:                                            #死循环
         if(threadError):                                                #若某一线程报错，中断服务器
@@ -479,13 +559,12 @@ def echo_socket(ws):
             translate = Thread(target = newThread,args=(ws_audio_data[ws],ws,0))
             translate.daemon = True
             translate.start()                                                   #主线程调用翻译任务线程   
-                                                           #清空当前识别内容
+
         
         else:                                                                #5. 正常的数据传入
             ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
 
     print("ws closed")
-    init()
 
 def init():
     global ws_audio_data
@@ -512,6 +591,7 @@ def init():
     modelOnUse = False                                                  #True：模型对象正在使用
     onPosProcess = False                                                #True：正在进行后处理
     threadError = False                                                 #True：线程报错
+    count = 0
 
 @app.route('/')
 def hello_world():
@@ -532,4 +612,3 @@ if __name__ == '__main__':
     server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
     print('server start')
     server.serve_forever()                                         #开启服务器
-
