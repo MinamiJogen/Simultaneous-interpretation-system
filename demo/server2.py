@@ -47,14 +47,7 @@ Cutted = False
 count = 0
 
 
-####标点模型所需参数
-window_size = 256
-step = 200
-model_name = 'p208p2002/zh-wiki-punctuation-restore'
-pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-pmodel.to(DEVICE)
-
+print("加载识别模型...")
 ####识别模型
 # model = whisper.load_model('medium', device=DEVICE)
 model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
@@ -62,56 +55,67 @@ model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",d
 
 head = ""
 
-# INST = {"STOP_RECORDING", "RESET", "START_RECORDING"}
+
+# print("加载标点模型...")
+# ####标点模型所需参数
+# window_size = 256
+# step = 200
+# model_name = 'p208p2002/zh-wiki-punctuation-restore'
+# pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+# pmodel.to(DEVICE)
 
 
-# 标点模型所需函数
-def predict_step(batch,model,tokenizer):
-        batch_out = []
-        batch_input_ids = batch
 
 
-        batch_input_ids = batch_input_ids.to(model.device)
+
+# # 标点模型所需函数
+# def predict_step(batch,model,tokenizer):
+#         batch_out = []
+#         batch_input_ids = batch
+
+
+#         batch_input_ids = batch_input_ids.to(model.device)
         
-        encodings = {'input_ids': batch_input_ids}
-        output = model(**encodings)
+#         encodings = {'input_ids': batch_input_ids}
+#         output = model(**encodings)
 
 
-        # # 使用tokenizer对文本进行编码，并返回attention_mask
-        # encoded_input = tokenizer(batch, padding=True, return_attention_mask=True, truncation=True, max_length=512)
+#         # # 使用tokenizer对文本进行编码，并返回attention_mask
+#         # encoded_input = tokenizer(batch, padding=True, return_attention_mask=True, truncation=True, max_length=512)
 
-        # # 将input_ids和attention_mask都转移到模型所在的设备
-        # input_ids = encoded_input['input_ids'].to(model.device)
-        # attention_mask = encoded_input['attention_mask'].to(model.device)
+#         # # 将input_ids和attention_mask都转移到模型所在的设备
+#         # input_ids = encoded_input['input_ids'].to(model.device)
+#         # attention_mask = encoded_input['attention_mask'].to(model.device)
 
-        # # 将input_ids和attention_mask都传递给模型
-        # output = model(input_ids=input_ids, attention_mask=attention_mask)
+#         # # 将input_ids和attention_mask都传递给模型
+#         # output = model(input_ids=input_ids, attention_mask=attention_mask)
 
 
-        predicted_token_class_id_batch = output['logits'].argmax(-1)
-        for predicted_token_class_ids, input_ids in zip(predicted_token_class_id_batch, batch_input_ids):
-            out=[]
-            tokens = tokenizer.convert_ids_to_tokens(input_ids)
+#         predicted_token_class_id_batch = output['logits'].argmax(-1)
+#         for predicted_token_class_ids, input_ids in zip(predicted_token_class_id_batch, batch_input_ids):
+#             out=[]
+#             tokens = tokenizer.convert_ids_to_tokens(input_ids)
             
-            # compute the pad start in input_ids
-            # and also truncate the predict
-            # print(tokenizer.decode(batch_input_ids))
-            input_ids = input_ids.tolist()
-            try:
-                input_id_pad_start = input_ids.index(tokenizer.pad_token_id)
-            except:
-                input_id_pad_start = len(input_ids)
-            input_ids = input_ids[:input_id_pad_start]
-            tokens = tokens[:input_id_pad_start]
+#             # compute the pad start in input_ids
+#             # and also truncate the predict
+#             # print(tokenizer.decode(batch_input_ids))
+#             input_ids = input_ids.tolist()
+#             try:
+#                 input_id_pad_start = input_ids.index(tokenizer.pad_token_id)
+#             except:
+#                 input_id_pad_start = len(input_ids)
+#             input_ids = input_ids[:input_id_pad_start]
+#             tokens = tokens[:input_id_pad_start]
     
-            # predicted_token_class_ids
-            predicted_tokens_classes = [model.config.id2label[t.item()] for t in predicted_token_class_ids]
-            predicted_tokens_classes = predicted_tokens_classes[:input_id_pad_start]
+#             # predicted_token_class_ids
+#             predicted_tokens_classes = [model.config.id2label[t.item()] for t in predicted_token_class_ids]
+#             predicted_tokens_classes = predicted_tokens_classes[:input_id_pad_start]
 
-            for token,ner in zip(tokens,predicted_tokens_classes):
-                out.append((token,ner))
-            batch_out.append(out)
-        return batch_out
+#             for token,ner in zip(tokens,predicted_tokens_classes):
+#                 out.append((token,ner))
+#             batch_out.append(out)
+#         return batch_out
 
 #异步时钟函数，定时提醒主线程执行翻译任务
 def clock(sec):
@@ -234,6 +238,7 @@ def punctuation(text):
     return result
 
 def translation(text):
+    return "\n"
     url = "https://umcat.cis.um.edu.mo/api/translate.php"
 
     data = {
@@ -410,7 +415,7 @@ def newThread(data,ws,flag):
 
             
             print("task 2:")
-            print(f"sing recognition : {conbinedLen}")
+            print(f"sing recognition : {singledLen}")
             t1 = time.time()
             singledResult = recognition(f"sing{count}.wav")
             t2 = time.time()
@@ -429,11 +434,13 @@ def newThread(data,ws,flag):
 
         else:
             print("One task")
+
+            totaledLen = totaled.duration_seconds
             totaled.export("total{}.wav".format(count))
 
-            print(f"total recognition : {conbinedLen}")
+            print(f"total recognition : {totaledLen}")
             t1 = time.time()           
-            totaledResult = recognition([f"total{count}.wav"])[0]
+            totaledResult = recognition(f"total{count}.wav")
             t2 = time.time()
             print(f"total recognition time:{t2 - t1}")
 
@@ -467,7 +474,7 @@ def newThread(data,ws,flag):
                 CutMedia(ws,audioLen)
 
             else:
-                nowString = singledResult
+                nowString = totaledResult
                 wsSend(ws)
             os.remove("total{}.wav".format(count))
 

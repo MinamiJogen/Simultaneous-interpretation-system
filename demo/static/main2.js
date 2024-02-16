@@ -12,8 +12,21 @@ window.onload = function() {
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
 
-  ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
-  console.log('socket set',ws);
+  try{
+    ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
+    console.log('socket set',ws);
+  }catch (err){
+    window.alert("Web socket cannot connect!!!" + err.message);
+  }
+  
+  ws.addEventListener("close", (event) =>{
+    window.alert("Web socket disconnected!!!");
+    if(isRecording == 1){                                       
+      mediaRecorder.stop();                                       //停止录音
+    }
+    isRecording = 0;
+  })
+
   
   navigator.mediaDevices.getUserMedia({ audio: true })
   .then(function(stream) {

@@ -12,8 +12,22 @@ window.onload = function() {
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
 
-  ws = new WebSocket("wss://wetalk.asia:8080/echo");               //建立socket
-  console.log('socket set',ws);
+  try{
+    ws = new WebSocket("wss://wetalk.asia:8080/echo");               //建立socket
+               //建立socket
+    console.log('socket set',ws);
+  }catch (err){
+    window.alert("Web socket cannot connect!!!" + err.message);
+  }
+  
+  ws.addEventListener("close", (event) =>{
+    window.alert("Web socket disconnected!!!");
+    if(isRecording == 1){                                       
+      mediaRecorder.stop();                                       //停止录音
+    }
+    isRecording = 0;
+  })
+
   
   navigator.mediaDevices.getUserMedia({ audio: true })
   .then(function(stream) {
@@ -45,14 +59,20 @@ window.onload = function() {
   enc = new TextDecoder("utf-8");//解析arraybuffer
 };
 
+
 /**点击清除内容按钮 */
 document.getElementById('clean').addEventListener('click', function() {
   if(isRecording != 0){
     return;
   }
-  receivedData = "";                                            //清空本地储存的数据
-  const content = document.getElementById('content');           //动态更新到页面
-  content.innerHTML = receivedData;
+                                              //清空本地储存的数据
+  const Hiscontent = document.getElementById('Hiscontent');             //动态更新到页面
+  const Nowcontent = document.getElementById('Nowcontent');
+  const Trancontent = document.getElementById('Trancontent');
+
+  Trancontent.innerHTML = ""
+  Hiscontent.innerHTML = ""
+  Nowcontent.innerHTML = ""
   ws.send("RESET")                                              //提醒后端清除数据
 });
 
