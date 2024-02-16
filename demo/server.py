@@ -56,66 +56,64 @@ model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",d
 head = ""
 
 
-# print("加载标点模型...")
-# ####标点模型所需参数
-# window_size = 256
-# step = 200
-# model_name = 'p208p2002/zh-wiki-punctuation-restore'
-# pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
-# tokenizer = AutoTokenizer.from_pretrained(model_name)
-# pmodel.to(DEVICE)
+print("加载标点模型...")
+####标点模型所需参数
+
+model_name = 'p208p2002/zh-wiki-punctuation-restore'
+pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+pmodel.to(DEVICE)
 
 
 
 
 
-# # 标点模型所需函数
-# def predict_step(batch,model,tokenizer):
-#         batch_out = []
-#         batch_input_ids = batch
+# 标点模型所需函数
+def predict_step(batch,model,tokenizer):
+        batch_out = []
+        batch_input_ids = batch
 
 
-#         batch_input_ids = batch_input_ids.to(model.device)
+        batch_input_ids = batch_input_ids.to(model.device)
         
-#         encodings = {'input_ids': batch_input_ids}
-#         output = model(**encodings)
+        attention_mask = (batch_input_ids != 0).float()
+        output = model(batch_input_ids, attention_mask=attention_mask)
+
+        # # 使用tokenizer对文本进行编码，并返回attention_mask
+        # encoded_input = tokenizer(batch, padding=True, return_attention_mask=True, truncation=True, max_length=512)
+
+        # # 将input_ids和attention_mask都转移到模型所在的设备
+        # input_ids = encoded_input['input_ids'].to(model.device)
+        # attention_mask = encoded_input['attention_mask'].to(model.device)
+
+        # # 将input_ids和attention_mask都传递给模型
+        # output = model(input_ids=input_ids, attention_mask=attention_mask)
 
 
-#         # # 使用tokenizer对文本进行编码，并返回attention_mask
-#         # encoded_input = tokenizer(batch, padding=True, return_attention_mask=True, truncation=True, max_length=512)
-
-#         # # 将input_ids和attention_mask都转移到模型所在的设备
-#         # input_ids = encoded_input['input_ids'].to(model.device)
-#         # attention_mask = encoded_input['attention_mask'].to(model.device)
-
-#         # # 将input_ids和attention_mask都传递给模型
-#         # output = model(input_ids=input_ids, attention_mask=attention_mask)
-
-
-#         predicted_token_class_id_batch = output['logits'].argmax(-1)
-#         for predicted_token_class_ids, input_ids in zip(predicted_token_class_id_batch, batch_input_ids):
-#             out=[]
-#             tokens = tokenizer.convert_ids_to_tokens(input_ids)
+        predicted_token_class_id_batch = output['logits'].argmax(-1)
+        for predicted_token_class_ids, input_ids in zip(predicted_token_class_id_batch, batch_input_ids):
+            out=[]
+            tokens = tokenizer.convert_ids_to_tokens(input_ids)
             
-#             # compute the pad start in input_ids
-#             # and also truncate the predict
-#             # print(tokenizer.decode(batch_input_ids))
-#             input_ids = input_ids.tolist()
-#             try:
-#                 input_id_pad_start = input_ids.index(tokenizer.pad_token_id)
-#             except:
-#                 input_id_pad_start = len(input_ids)
-#             input_ids = input_ids[:input_id_pad_start]
-#             tokens = tokens[:input_id_pad_start]
+            # compute the pad start in input_ids
+            # and also truncate the predict
+            # print(tokenizer.decode(batch_input_ids))
+            input_ids = input_ids.tolist()
+            try:
+                input_id_pad_start = input_ids.index(tokenizer.pad_token_id)
+            except:
+                input_id_pad_start = len(input_ids)
+            input_ids = input_ids[:input_id_pad_start]
+            tokens = tokens[:input_id_pad_start]
     
-#             # predicted_token_class_ids
-#             predicted_tokens_classes = [model.config.id2label[t.item()] for t in predicted_token_class_ids]
-#             predicted_tokens_classes = predicted_tokens_classes[:input_id_pad_start]
+            # predicted_token_class_ids
+            predicted_tokens_classes = [model.config.id2label[t.item()] for t in predicted_token_class_ids]
+            predicted_tokens_classes = predicted_tokens_classes[:input_id_pad_start]
 
-#             for token,ner in zip(tokens,predicted_tokens_classes):
-#                 out.append((token,ner))
-#             batch_out.append(out)
-#         return batch_out
+            for token,ner in zip(tokens,predicted_tokens_classes):
+                out.append((token,ner))
+            batch_out.append(out)
+        return batch_out
 
 #异步时钟函数，定时提醒主线程执行翻译任务
 def clock(sec):
@@ -211,8 +209,9 @@ def CutMedia(ws,second):
 
 def punctuation(text):
 
-    return text
-
+    # return text
+    window_size = 256
+    step = 200
     #text = "我爱抽电子烟特别是瑞克五代"
     dataset = DocumentDataset(text,window_size=window_size,step=step)
     dataloader = DataLoader(dataset=dataset,shuffle=False,batch_size=5)
@@ -231,14 +230,14 @@ def punctuation(text):
 
     result = result.replace("[UNK]", ' ')
 
-    pun = {'。', '，', '！', ',','？','?'}
+    pun = {'。', '，', '！', ',','？','?','、'}
     result = [result[i] for i in range(len(result)) if not (result[i] in pun and result[i-1] in pun)]
     result = ''.join(result)
 
     return result
 
 def translation(text):
-    return "\n"
+    # return ""
     url = "https://umcat.cis.um.edu.mo/api/translate.php"
 
     data = {
@@ -287,7 +286,34 @@ def audioSlice(filename):
     # if(len(chunks) == 0):
     #     return 
     # else:
-    return chunks
+
+    if(len(chunks) == 0):
+        return -1, None, None
+
+    audioList = chunks
+
+    totaled = audioList[0]
+    for au in range(1,len(audioList)):
+        totaled = totaled + audioList[au]
+    
+
+    if(totaled.duration_seconds < 1.2):
+        totaled = None       
+
+    singled = audioList[len(audioList)-1]
+    singled = None if(singled.duration_seconds < 1.2) else singled
+
+
+    conbined = None
+    if(len(audioList) > 1):
+        conbined = audioList[0]
+        for i in range(1,len(audioList) - 1):
+            conbined += audioList[i]
+        conbined = None if(conbined.duration_seconds < 1.2) else conbined
+
+
+
+    return totaled, conbined, singled
     
 def wsSend(ws):
     global mainString, nowString, tranString
@@ -320,42 +346,25 @@ def newThread(data,ws,flag):
         audioLen = save_as_webm(data)                                   #二进制数据转码mp3
 
 
-        audioList = audioSlice("temp{}.wav".format(count))
+        totaled, conbined, singled = audioSlice("temp{}.wav".format(count))
         os.remove("temp{}.wav".format(count))
 
-        if(len(audioList) == 0):    
+
+        if(totaled == -1):    
             print("empty audio") 
             CutMedia(ws,audioLen)       
             modelOnUse = False  
             nowString = "" 
             wsSend(ws)
+            print(f"---------------ThreadEnd--------------------------")
             return 
-
-        totaled = audioList[0]
-        for au in range(1,len(audioList)):
-            totaled = totaled + audioList[au]
-        
-
-        if(totaled.duration_seconds < 1.2):
-            print("audio too short")        
+        elif(totaled == None):
+            print("too short")
             modelOnUse = False  
             nowString = "" 
             wsSend(ws)
-            return             
-
-        singled = audioList[len(audioList)-1]
-        singled = None if(singled.duration_seconds < 1.2) else singled
-
-
-        conbined = None
-        if(len(audioList) > 1):
-            conbined = audioList[0]
-            for i in range(1,len(audioList) - 1):
-                conbined += audioList[i]
-        
-            conbined = None if(conbined.duration_seconds < 1.2) else conbined
-
-
+            print(f"---------------ThreadEnd--------------------------")
+            return 
 
         if(conbined != None and singled != None):
             print("Two task")
@@ -393,25 +402,30 @@ def newThread(data,ws,flag):
             conbinedResult = recognition(f"conb{count}.wav")
             t2 = time.time()
             print(f"conb recognition time:{t2 - t1}")
-            nowString = conbinedResult
+            mainString += "\n"+conbinedResult
             wsSend(ws)
 
-            print(f"conb punctuation ")
-            t1 = time.time()
-            conbinedResult = punctuation(conbinedResult)
-            t2 = time.time()
-            print(f"conb punctuation time:{t2 - t1}")
-            nowString = ""
-            mainString += "\n" + conbinedResult
-            wsSend(ws)
 
-            print(f"conb transaltion ")
-            t1 = time.time()
-            conbinedResultTrans = translation(conbinedResult)
-            t2 = time.time()
-            print(f"conb transaltion time:{t2 - t1}")
-            tranString += "\n" + conbinedResultTrans
-            wsSend(ws)
+            PTThread = Thread(target = P_TThread, args = (conbinedResult,ws))                 
+            PTThread.daemon = True                                    
+            PTThread.start()  
+
+            # print(f"conb punctuation ")
+            # t1 = time.time()
+            # conbinedResult = punctuation(conbinedResult)
+            # t2 = time.time()
+            # print(f"conb punctuation time:{t2 - t1}")
+            # nowString = ""
+            # mainString += "\n" + conbinedResult
+            # wsSend(ws)
+
+            # print(f"conb transaltion ")
+            # t1 = time.time()
+            # conbinedResultTrans = translation(conbinedResult)
+            # t2 = time.time()
+            # print(f"conb transaltion time:{t2 - t1}")
+            # tranString += "\n" + conbinedResultTrans
+            # wsSend(ws)
 
             
             print("task 2:")
@@ -444,6 +458,7 @@ def newThread(data,ws,flag):
             t2 = time.time()
             print(f"total recognition time:{t2 - t1}")
 
+
             if("一个市镇的一个市镇" in totaledResult or
                "一个建筑的一个建筑" in totaledResult):
                 nowString = ""
@@ -451,25 +466,28 @@ def newThread(data,ws,flag):
 
             if(totaledResult == nowString and nowString != ""):
                 
-                nowString = totaledResult
+                mainString +="\n"+ totaledResult
                 wsSend(ws)
 
-                print(f"total punctuation ")
-                t1 = time.time() 
-                totaledResult = punctuation(totaledResult)
-                t2 = time.time()
-                print(f"total punctuation time:{t2 - t1}")
-                nowString = ""
-                mainString += "\n" + totaledResult
-                wsSend(ws)
+                PTThread = Thread(target = P_TThread, args = (totaledResult,ws))                 
+                PTThread.daemon = True                                    
+                PTThread.start()  
+                # print(f"total punctuation ")
+                # t1 = time.time() 
+                # totaledResult = punctuation(totaledResult)
+                # t2 = time.time()
+                # print(f"total punctuation time:{t2 - t1}")
+                # nowString = ""
+                # mainString += "\n" + totaledResult
+                # wsSend(ws)
 
-                print(f"total translation ")
-                t1 = time.time()              
-                totaledResultTrans = translation(totaledResult)
-                t2 = time.time()
-                print(f"total translation time:{t2 - t1}")
-                tranString += "\n" + totaledResultTrans
-                wsSend(ws)
+                # print(f"total translation ")
+                # t1 = time.time()              
+                # totaledResultTrans = translation(totaledResult)
+                # t2 = time.time()
+                # print(f"total translation time:{t2 - t1}")
+                # tranString += "\n" + totaledResultTrans
+                # wsSend(ws)
 
                 CutMedia(ws,audioLen)
 
@@ -492,6 +510,28 @@ def newThread(data,ws,flag):
     except Exception as e:
         traceback.print_exc()
         threadError = True
+
+
+def P_TThread(text,ws):
+    global nowString, mainString, tranString
+
+    textPunc = punctuation(text)
+    
+    # 找到最后一个子字符串的位置
+    last_occurrence_position = mainString.rfind(text)
+
+    # 如果找到了子字符串
+    if last_occurrence_position != -1:
+        # 替换最后一个子字符串
+        mainString = mainString[:last_occurrence_position] + textPunc + mainString[last_occurrence_position + len(text):]
+    else:
+        mainString += "\n" + textPunc
+    wsSend(ws)
+
+    textTrans = translation(textPunc)
+    tranString += "\n" + textTrans
+    wsSend(ws)
+
 
 #websocket端口函数
 @sockets.route('/echo')
