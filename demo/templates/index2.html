@@ -3,23 +3,34 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta http-equiv="Cache" content="no-cache">
 <html>
 <head>
+  <style>
+    .scrollable-div {
+      border: 1px solid black;
+      width: 80vw;
+      height: 40vh;
+      overflow: auto;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
   <title>WebRTC & WebSocket Audio Stream Demo</title>
 </head>
 <body>
   <button id="start">开始录制</button>
   <button id="end">结束录制</button>
   <button id="clean">清除内容</button>
-  <script src="{{ url_for('static', filename='main2.js') }}"></script>
+  <script src="{{ url_for('static', filename='main2.js', _=1111) }}"></script>
 
 
-  <div id="recognition">
+  <div id="recognition" class="scrollable-div">
     <p>识别内容:</p>
     <p id="Hiscontent" style = "  word-wrap: break-word; max-width: 90%;"></p>
     <p id="Nowcontent" style = "  word-wrap: break-word; max-width: 90%; color: gray"></p>
   </div>
-  <div id="translation">
+  <div id="translation" class="scrollable-div">
     <p>翻译内容:</p>
     <p id="Trancontent" style = "  word-wrap: break-word; max-width: 90%; color: blue"></p>
   </div>
