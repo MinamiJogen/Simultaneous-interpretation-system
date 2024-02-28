@@ -12,7 +12,7 @@ from threading import Thread
 import time
 import traceback
 from zhconv import convert
-
+import re
 
 
 from gevent import pywsgi
@@ -41,9 +41,9 @@ recogOnUse = False                                                  #True：识�
 puncOnUse = False
 onPosProcess = False                                                #True：正在进行后处理
 threadError = False                                                 #True：线程报错
-mainString = ""                                                     #历史识别内容
+mainString = []                                                     #历史识别内容
 nowString = ""                                                      #当前识别内容
-tranString = ""
+tranString = []
 CutSeconde = 0
 Cutted = False
 
@@ -214,6 +214,11 @@ def CutMedia(ws,second):
     print("cut finish")
 
 def punctuation(text):
+
+
+    pattern = re.compile(r'[^\u4e00-\u9fa5]')
+    if(bool(pattern.search(text))):
+        return text
 
     # return text
     window_size = 256
@@ -415,7 +420,7 @@ def newThread(data,ws,flag):
             conbinedResult = recognition(f"conb{count}.wav")
             t2 = time.time()
             print(f"conb recognition time:{t2 - t1}")
-            mainString += "\n"+conbinedResult
+            mainString.append(conbinedResult) 
             wsSend(ws)
 
 
@@ -479,7 +484,7 @@ def newThread(data,ws,flag):
 
             if(totaledResult == nowString and nowString != ""):
                 
-                mainString +="\n"+ totaledResult
+                mainString.append(totaledResult)
                 wsSend(ws)
 
                 PTThread = Thread(target = P_TThread, args = (totaledResult,ws))                 
@@ -536,19 +541,28 @@ def P_TThread(text,ws):
     puncOnUse = True
     textPunc = punctuation(text)
     puncOnUse = False
+
+    def find_from_end(lst, target):
+        # 从后向前查找元素，返回位置
+        for i in range(len(lst)-1, -1, -1):
+            if lst[i] == target:
+                return i
+        return -1
     # 找到最后一个子字符串的位置
-    last_occurrence_position = mainString.rfind(text)
+    last_occurrence_position = find_from_end(mainString,text)
+
+
 
     # 如果找到了子字符串
     if last_occurrence_position != -1:
         # 替换最后一个子字符串
-        mainString = mainString[:last_occurrence_position] + textPunc + mainString[last_occurrence_position + len(text):]
+        mainString[last_occurrence_position] = textPunc
     else:
-        mainString += "\n" + textPunc
+        mainString.append(textPunc)
     wsSend(ws)
 
     textTrans = translation(textPunc)
-    tranString += "\n" + textTrans
+    tranString.append(textTrans)
     wsSend(ws)
 
 #websocket端口函数
@@ -610,9 +624,9 @@ def echo_socket(ws):
             print("reset")
             del ws_audio_data[ws]                                               #清空缓存数组
             ws_audio_data[ws] = []
-            mainString = ""                                                     #清空历史识别内容 
+            mainString = []                                                     #清空历史识别内容 
             nowString = ""  
-            tranString = ""
+            tranString = []
 
 
         elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
@@ -652,9 +666,9 @@ def init():
 
     ws_audio_data = {}                                         
     Cutted = False
-    mainString = ""
+    mainString = []
     nowString = ""
-    tranString = ""
+    tranString = []
     clockFlag = None
     recogOnUse = False
     recogOnUse = False                                                  #True：模型对象正在使用
@@ -677,7 +691,8 @@ def hello_world():
 
 
 if __name__ == '__main__':
-
+    # recognition("test.wav")
+    # punctuation("测试")
     server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
     print('server start')
     server.serve_forever()                                         #开启服务器

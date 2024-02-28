@@ -1,3 +1,3 @@
 # Simultaneous-interpretation-system
 
-运行demo/server.py后，打开http://localhost:8000/
+在demo目录下运行server2.py后，打开http://localhost:8000/

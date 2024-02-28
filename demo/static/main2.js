@@ -41,10 +41,10 @@ window.onload = function() {
     
             //动态更新到页面
     
-    check = checkOnBottom('recognition')
+    rcheck = checkOnBottom('recognition')
     const Hiscontent = document.getElementById('Hiscontent'); 
-    Hiscontent.innerHTML = receivedData.mainString;
-    if(check){
+    Hiscontent.innerHTML = splicing(receivedData.mainString);
+    if(rcheck){
       let div = document.getElementById('recognition');
       div.scrollTop = div.scrollHeight;
     }
@@ -61,16 +61,16 @@ window.onload = function() {
     if(PrevPackate == ""){
       let speed = 500.0 / receivedData.nowString.length
       typeWriter('Nowcontent','recognition', receivedData.nowString,speed)
-      speed = 500.0 / receivedData.tranString.length
-      typeWriter('Trancontent','translation', receivedData.tranString,speed)
+      speed = 500.0 / splicing(receivedData.tranString).length
+      typeWriter('Trancontent','translation', splicing(receivedData.tranString),speed)
 
     }else{
       
       if(receivedData.tranString !== ""){
-        TranCommon = getCommonPrefix(PrevPackate.tranString, receivedData.tranString)
-        Trancontent.innerHTML = receivedData.tranString.substring(0,TranCommon);
-        let speed = 700.0 / receivedData.tranString.substring(TranCommon).length
-        setTimeout(typeWriter('Trancontent','translation', receivedData.tranString.substring(TranCommon),speed),0)
+        TranCommon = getCommonPrefix(splicing(PrevPackate.tranString), splicing(receivedData.tranString))
+        Trancontent.innerHTML = splicing(receivedData.tranString).substring(0,TranCommon);
+        let speed = 700.0 / splicing(receivedData.tranString).substring(TranCommon).length
+        setTimeout(typeWriter('Trancontent','translation', splicing(receivedData.tranString).substring(TranCommon),speed),0)
       }
       
       if(receivedData.nowString !== ""){
@@ -139,7 +139,7 @@ document.getElementById('start').addEventListener('click', function() {
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => handleStream(stream))
       .catch(err => console.log('出现错误：', err));
-    document.body.style.backgroundColor = '#40E0D0'; // 更改页面背景提示用户
+    // document.body.style.backgroundColor = '#40E0D0'; // 更改页面背景提示用户
     ws.send("START_RECORDING");
     console.log("Data sent: ","START_RECORDING")
   }
@@ -154,7 +154,7 @@ function handleStream(stream) {
   console.log(mediaRecorder)
   mediaRecorder.onstop = function() {                           //mediaRecorder监听录制停止
 
-    document.body.style.backgroundColor = '#ffffff';                // 更改页面背景提示用户
+    // document.body.style.backgroundColor = '#ffffff';                // 更改页面背景提示用户
     setTimeout(function() {
       ws.send("STOP_RECORDING");                                      // 提醒后端停止录制
       //ws.send(fileType);
@@ -207,6 +207,19 @@ function typeWriter(id,divid,txt,speed) {
   type();
 
 }
+
+function splicing(lst){
+  let str = "";
+  if(lst.length > 0)
+    str = lst[0];
+
+  for(i=1;i<lst.length;i++){
+    str += "\n"+lst[i];
+  }
+
+  return str
+}
+
 
 function getCommonPrefix(str1, str2) {
   let i = 0; // 初始化索引为0
