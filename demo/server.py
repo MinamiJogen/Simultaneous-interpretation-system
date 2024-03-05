@@ -14,14 +14,13 @@ import traceback
 from zhconv import convert
 import re
 
+from ppasr.predict import PPASRPredictor
+
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from zhpr.predict import DocumentDataset,merge_stride,decode_pred
-from transformers import AutoModelForTokenClassification,AutoTokenizer,AutoProcessor, AutoModelForSpeechSeq2Seq
-from transformers import pipeline
-from torch.utils.data import DataLoader
+
 
 
 
@@ -55,7 +54,8 @@ count = 0
 
 print("加载识别模型...")
 ####识别模型
-model = whisper.load_model('tiny', device=DEVICE)
+predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= False)
+# model = whisper.load_model('tiny', device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
 
@@ -64,62 +64,24 @@ head = ""
 
 print("加载标点模型...")
 ####标点模型所需参数
+##model 1
+# from zhpr.predict import DocumentDataset,merge_stride,decode_pred
+# from transformers import AutoModelForTokenClassification,AutoTokenizer,AutoProcessor, AutoModelForSpeechSeq2Seq
+# from transformers import pipeline
+# from torch.utils.data import DataLoader
+# model_name = 'p208p2002/zh-wiki-punctuation-restore'
+# pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+# pmodel.to(DEVICE)
 
-model_name = 'p208p2002/zh-wiki-punctuation-restore'
-pmodel = AutoModelForTokenClassification.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-pmodel.to(DEVICE)
-
-
-
-
-
-# 标点模型所需函数
-def predict_step(batch,model,tokenizer):
-        batch_out = []
-        batch_input_ids = batch
-
-
-        batch_input_ids = batch_input_ids.to(model.device)
-        
-        attention_mask = (batch_input_ids != 0).float()
-        output = model(batch_input_ids, attention_mask=attention_mask)
-
-        # # 使用tokenizer对文本进行编码，并返回attention_mask
-        # encoded_input = tokenizer(batch, padding=True, return_attention_mask=True, truncation=True, max_length=512)
-
-        # # 将input_ids和attention_mask都转移到模型所在的设备
-        # input_ids = encoded_input['input_ids'].to(model.device)
-        # attention_mask = encoded_input['attention_mask'].to(model.device)
-
-        # # 将input_ids和attention_mask都传递给模型
-        # output = model(input_ids=input_ids, attention_mask=attention_mask)
+##model 2
+from ppasr.infer_utils.pun_predictor import PunctuationPredictor
+pun_predictor = PunctuationPredictor(model_dir='models\pun_models3', use_gpu=False)
 
 
-        predicted_token_class_id_batch = output['logits'].argmax(-1)
-        for predicted_token_class_ids, input_ids in zip(predicted_token_class_id_batch, batch_input_ids):
-            out=[]
-            tokens = tokenizer.convert_ids_to_tokens(input_ids)
-            
-            # compute the pad start in input_ids
-            # and also truncate the predict
-            # print(tokenizer.decode(batch_input_ids))
-            input_ids = input_ids.tolist()
-            try:
-                input_id_pad_start = input_ids.index(tokenizer.pad_token_id)
-            except:
-                input_id_pad_start = len(input_ids)
-            input_ids = input_ids[:input_id_pad_start]
-            tokens = tokens[:input_id_pad_start]
-    
-            # predicted_token_class_ids
-            predicted_tokens_classes = [model.config.id2label[t.item()] for t in predicted_token_class_ids]
-            predicted_tokens_classes = predicted_tokens_classes[:input_id_pad_start]
 
-            for token,ner in zip(tokens,predicted_tokens_classes):
-                out.append((token,ner))
-            batch_out.append(out)
-        return batch_out
+
+
 
 #异步时钟函数，定时提醒主线程执行翻译任务
 def clock(sec):
@@ -208,43 +170,100 @@ def CutMedia(ws,second):
 
     print(f"current length:{len(ws_audio_data[ws])}")
     print(f"cut length:{second}")
-    del ws_audio_data[ws][0:second]
-    ws_audio_data[ws].insert(0,head)
+    del ws_audio_data[ws][1:second]
+    # ws_audio_data[ws].insert(0,head)
     Cutted = True
-    print("cut finish")
+    print("cut finish") 
 
 def punctuation(text):
 
+    ### model 1
+    
 
-    pattern = re.compile(r'[^\u4e00-\u9fa5]')
-    if(bool(pattern.search(text))):
-        return text
+    # 标点模型所需函数
+    # def predict_step(batch,model,tokenizer):
+    #         batch_out = []
+    #         batch_input_ids = batch
 
-    # return text
-    window_size = 256
-    step = 200
-    #text = "我爱抽电子烟特别是瑞克五代"
-    dataset = DocumentDataset(text,window_size=window_size,step=step)
-    dataloader = DataLoader(dataset=dataset,shuffle=False,batch_size=5)
-    model_pred_out = []
 
-    for batch in dataloader:
+    #         batch_input_ids = batch_input_ids.to(model.device)
 
-        batch_out = predict_step(batch,pmodel,tokenizer)
-        for out in batch_out:
-            model_pred_out.append(out)
+    #         attention_mask = (batch_input_ids != 0).float()
+    #         output = model(batch_input_ids, attention_mask=attention_mask)
 
-    merge_pred_result = merge_stride(model_pred_out,step)
+    #         # # 使用tokenizer对文本进行编码，并返回attention_mask
+    #         # encoded_input = tokenizer(batch, padding=True, return_attention_mask=True, truncation=True, max_length=512)
 
-    merge_pred_result_deocde = decode_pred(merge_pred_result)
-    result = ''.join(merge_pred_result_deocde)
+    #         # # 将input_ids和attention_mask都转移到模型所在的设备
+    #         # input_ids = encoded_input['input_ids'].to(model.device)
+    #         # attention_mask = encoded_input['attention_mask'].to(model.device)
 
-    result = result.replace("[UNK]", ' ')
+    #         # # 将input_ids和attention_mask都传递给模型
+    #         # output = model(input_ids=input_ids, attention_mask=attention_mask)
 
+
+    #         predicted_token_class_id_batch = output['logits'].argmax(-1)
+    #         for predicted_token_class_ids, input_ids in zip(predicted_token_class_id_batch, batch_input_ids):
+    #             out=[]
+    #             tokens = tokenizer.convert_ids_to_tokens(input_ids)
+
+    #             # compute the pad start in input_ids
+    #             # and also truncate the predict
+    #             # print(tokenizer.decode(batch_input_ids))
+    #             input_ids = input_ids.tolist()
+    #             try:
+    #                 input_id_pad_start = input_ids.index(tokenizer.pad_token_id)
+    #             except:
+    #                 input_id_pad_start = len(input_ids)
+    #             input_ids = input_ids[:input_id_pad_start]
+    #             tokens = tokens[:input_id_pad_start]
+
+    #             # predicted_token_class_ids
+    #             predicted_tokens_classes = [model.config.id2label[t.item()] for t in predicted_token_class_ids]
+    #             predicted_tokens_classes = predicted_tokens_classes[:input_id_pad_start]
+
+    #             for token,ner in zip(tokens,predicted_tokens_classes):
+    #                 out.append((token,ner))
+    #             batch_out.append(out)
+    #         return batch_out
+        
+    # pattern = re.compile(r'[^\u4e00-\u9fa5]')
+    # if(bool(pattern.search(text))):
+    #     return text
+
+    # # return text
+    # window_size = 256
+    # step = 200
+    # #text = "我爱抽电子烟特别是瑞克五代"
+    # dataset = DocumentDataset(text,window_size=window_size,step=step)
+    # dataloader = DataLoader(dataset=dataset,shuffle=False,batch_size=5)
+    # model_pred_out = []
+
+    # for batch in dataloader:
+
+    #     batch_out = predict_step(batch,pmodel,tokenizer)
+    #     for out in batch_out:
+    #         model_pred_out.append(out)
+
+    # merge_pred_result = merge_stride(model_pred_out,step)
+
+    # merge_pred_result_deocde = decode_pred(merge_pred_result)
+    # result = ''.join(merge_pred_result_deocde)
+
+    # result = result.replace("[UNK]", ' ')
+
+    # pun = {'。', '，', '！', ',','？','?','、'}
+    # result = [result[i] for i in range(len(result)) if not (result[i] in pun and result[i-1] in pun)]
+    # result = ''.join(result)
+
+    
+    ### model 2
+    result = pun_predictor(text)
+    
     pun = {'。', '，', '！', ',','？','?','、'}
     result = [result[i] for i in range(len(result)) if not (result[i] in pun and result[i-1] in pun)]
     result = ''.join(result)
-
+    
     return result
 
 def translation(text):
@@ -283,9 +302,14 @@ def recognition(fileList):
     # result = result.replace('尼好','你好')
     # result = result.replace('尼号','你好')
 
-    # model 2
-    result = model.transcribe(fileList, language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)['text']
-    result = convert(result, 'zh-hans')
+    # whisper tiny
+    # result = model.transcribe(fileList, language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)['text']
+    # result = convert(result, 'zh-hans')
+    
+
+    # #ppasr
+    result = predictor.predict(audio_data=fileList, use_pun=False)['text']
+
     return result
 
 def audioSlice(filename):
@@ -635,6 +659,7 @@ def echo_socket(ws):
             clockFlag = 0
             if(len(ws_audio_data[ws]) >= 100):
                 process_data = ws_audio_data[ws][0:99]
+                print("DATA TOO LONG. PROCESS FIRST 100 DATA")
             else:
                 process_data = ws_audio_data[ws]
             print("data length:{}".format(len(process_data)))
@@ -678,7 +703,7 @@ def init():
 
 @app.route('/')
 def hello_world():
-    return render_template("index.html")
+    return render_template("index2.html")
 
 
 # @app.errorhandler(Exception)
