@@ -176,6 +176,8 @@ function handleStream(stream) {
 }
 
 function checkOnBottom(id){
+
+  return true;
   let div = document.getElementById(id);
 
   if (div.scrollTop + div.clientHeight >= div.scrollHeight){

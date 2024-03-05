@@ -7,13 +7,13 @@
 <html>
 <head>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <!-- <link rel="stylesheet" type="text/css" href="../static/style.css"> -->
+  {% comment %} <link rel="stylesheet" type="text/css" href="../static/style.css"> {% endcomment %}
   <title>WebRTC & WebSocket Audio Stream Demo</title>
 </head>
 <body>
   <div class="topbar-container">
-    <img src="{{url_for('static', filename='1.png')}}" style="height: 10vh;">
-    <!-- <img src="../static/1.png" style="height: 10vh;"> -->
+    <img src="{{url_for('static', filename='1.png')}}" style="height: 80pt;">
+    {% comment %} <img src="../static/1.png" style="height: 80pt;"> {% endcomment %}
     <h1>WeSpeak: Simutinously Interpretation System</h1>
   </div>
   
@@ -68,6 +68,6 @@
       </div>
     </div>
   </div>
-  <script src="{{ url_for('static', filename='main2.js', _=5) }}"></script>
+  <script src="{{ url_for('static', filename='main2.js', _=6) }}"></script>
 </body>
 </html>
