@@ -6,14 +6,12 @@
 <meta http-equiv="Cache" content="no-cache">
 <html>
 <head>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <title>WebRTC & WebSocket Audio Stream Demo</title>
+  <link rel="stylesheet" type="text/css" href="../static/style.css">
+  <title>WeSpeak: Simutinously Interpretation System</title>
 </head>
 <body>
   <div class="topbar-container">
-    <img src="{{url_for('static', filename='image/logo.png')}}" style="height: 80pt;"> 
-
+    <img src="../static/image/logo.png" style="height: 80pt;">
     <h1>WeSpeak: Simutinously Interpretation System</h1>
   </div>
   <div class="main-container">
@@ -65,29 +63,29 @@
     <div class="button-container">
 
       <button id="start" onclick="">开始录制</button>
+      <!--<button id="end">结束录制</button>-->
       <button id="clean">清除内容</button>
       <button id="download">下载文档</button>
-
     </div>
   </div>
   <div class="foot-container">
     <div class="mark-container">
-      <img src="{{url_for('static', filename='image/nlp2ct.png')}}" style="height: 70pt;">
 
+      <img src="../static/image/nlp2ct.png" style="height: 70pt;">
 
-      <img src="{{url_for('static', filename='image/um.png')}}" style="height: 70pt;">
-
+      <img src="../static/image/um.png" style="height: 70pt;">
 
       
       <div class="contact">
         <h4> 联系我们 </h4><br>
         <a class="linn" href="mailto:dc02764@um.edu.mo">
-          <img src="{{url_for('static',filename="image/mail.png")}}" style="height:1.1em; vertical-align: middle;">
+          <img src="../static/image/mail.png" style="height:1.1em; vertical-align: middle;">
           dc02764@um.edu.mo
         </a>
+
         <br>
         <a class="linn" href="mailto:dc02727@um.edu.mo">
-          <img src="{{url_for('static',filename="image/mail.png")}}" style="height:1.1em; vertical-align: middle;">
+          <img src="../static/image/mail.png" style="height:1.1em; vertical-align: middle;">
           dc02727@um.edu.mo
         </a>
       </div>
@@ -95,12 +93,12 @@
       <div class="link">
         <h4> 相关链接 </h4><br>
         <a class="linn" href="https://www.um.edu.mo/">
-          <img src="{{url_for('static',filename="image/link.png")}}" style="height:1.1em; vertical-align: middle;">  
+          <img src="../static/image/link.png" style="height:1.1em; vertical-align: middle;">
           澳门大学官网
         </a>
         <br>
         <a class="linn" href="http://nlp2ct.cis.um.edu.mo/">
-          <img src="{{url_for('static',filename="image/link.png")}}" style="height:1.1em; vertical-align: middle;">  
+          <img src="../static/image/link.png" style="height:1.1em; vertical-align: middle;">
           自然語言處理與中葡機器翻譯實驗室
         </a>
       </div>
@@ -111,6 +109,6 @@
     <p class="copyright">Copyright © 2024 NLP2CT, University of Macau</p>
 
   </div>
-  <script src="{{ url_for('static', filename='main2.js', _=14) }}"></script>
+  <script src="{{ url_for('static', filename='main2.js', _=9) }}"></script>
 </body>
 </html>

@@ -318,7 +318,7 @@ def audioSlice(filename):
     audio = AudioSegment.from_file(filename)
 
     # 设置分割参数
-    min_silence_len = 800  # 最小静音长度
+    min_silence_len = 600  # 最小静音长度
     silence_thresh = -38  # 静音阈值，越小越严格
     keep_silence = 600  # 保留静音长度
     # print(audio)
@@ -542,9 +542,9 @@ def newThread(data,ws,flag):
         print("Process time:{}".format(T2-T1))
         count+=1
 
-        print(f"main:{mainString}")
-        print(f"now:{nowString}")
-        print(f"trans:{tranString}")
+        # print(f"main:{mainString}")
+        # print(f"now:{nowString}")
+        # print(f"trans:{tranString}")
         print(f"---------------ThreadEnd--------------------------")
 
         recogOnUse = False                                              #解锁模型

@@ -7,67 +7,110 @@
 <html>
 <head>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  {% comment %} <link rel="stylesheet" type="text/css" href="../static/style.css"> {% endcomment %}
+
   <title>WebRTC & WebSocket Audio Stream Demo</title>
 </head>
 <body>
   <div class="topbar-container">
-    <img src="{{url_for('static', filename='1.png')}}" style="height: 80pt;">
-    {% comment %} <img src="../static/1.png" style="height: 80pt;"> {% endcomment %}
+    <img src="{{url_for('static', filename='image/logo.png')}}" style="height: 80pt;"> 
+
     <h1>WeSpeak: Simutinously Interpretation System</h1>
   </div>
-  
-  <div class="button-container">
-    <p style="margin-left: 3%;"></p>
-    <button id="start">开始录制</button>
-    <button id="end">结束录制</button>
-    <button id="clean">清除内容</button>
-  </div>
-  <div class="container">
-    <div class="window">
-      <p>识别内容:</p>
-      <div id="recognition" class="scrollable-div">
-        
-        <p id="Hiscontent" class="black-text">test</p>
-        <p id="Nowcontent" class = "gray-text">test</p>
+  <div class="main-container">
+    <div class="container">
+      <div class="window">
+        <p class="normal-text">识别内容:</p>
+        <div id="recognition" class="scrollable-div">
+          
+          <p id="Hiscontent" class="black-text">test</p>
+          <p id="Nowcontent" class = "gray-text">test</p>
+        </div>
+      </div>
+      <div class="window">
+        <p class="normal-text">翻译内容:</p>
+        <div id="translation" class="scrollable-div">
+          
+          <p id="Trancontent" class = "blue-text">test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test
+            test</p>
+        </div>
       </div>
     </div>
-    <div class="window">
-      <p>翻译内容:</p>
-      <div id="translation" class="scrollable-div">
-        
-        <p id="Trancontent" class = "blue-text">test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test
-          test</p>
-      </div>
+    <div class="button-container">
+
+      <button id="start" onclick="">开始录制</button>
+      <button id="clean">清除内容</button>
+      <button id="download">下载文档</button>
+
     </div>
   </div>
-  <script src="{{ url_for('static', filename='main2.js', _=6) }}"></script>
+  <div class="foot-container">
+    <div class="mark-container">
+      <img src="{{url_for('static', filename='image/nlp2ct.png')}}" style="height: 70pt;">
+
+
+      <img src="{{url_for('static', filename='image/um.png')}}" style="height: 70pt;">
+
+
+      
+      <div class="contact">
+        <h4> 联系我们 </h4><br>
+        <a class="linn" href="mailto:dc02764@um.edu.mo">
+          <img src="{{url_for('static',filename="image/mail.png")}}" style="height:1.1em; vertical-align: middle;">
+          dc02764@um.edu.mo
+        </a>
+        <br>
+        <a class="linn" href="mailto:dc02727@um.edu.mo">
+          <img src="{{url_for('static',filename="image/mail.png")}}" style="height:1.1em; vertical-align: middle;">
+          dc02727@um.edu.mo
+        </a>
+      </div>
+
+      <div class="link">
+        <h4> 相关链接 </h4><br>
+        <a class="linn" href="https://www.um.edu.mo/">
+          <img src="{{url_for('static',filename="image/link.png")}}" style="height:1.1em; vertical-align: middle;">  
+          澳门大学官网
+        </a>
+        <br>
+        <a class="linn" href="http://nlp2ct.cis.um.edu.mo/">
+          <img src="{{url_for('static',filename="image/link.png")}}" style="height:1.1em; vertical-align: middle;">  
+          自然語言處理與中葡機器翻譯實驗室
+        </a>
+      </div>
+    </div>
+
+
+    
+    <p class="copyright">Copyright © 2024 NLP2CT, University of Macau</p>
+
+  </div>
+  <script src="{{ url_for('static', filename='main2.js', _=14) }}"></script>
 </body>
 </html>

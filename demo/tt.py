@@ -1,7 +1,5 @@
-import paddle as paddle
-import paddle.fluid as fluid
-import paddlespeech as speech
+from ppasr.predict import PPASRPredictor
+
+predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= False)
 
 
-
-print("hallo")

@@ -27,8 +27,12 @@ window.onload = function() {
       mediaRecorder.stop();                                       //停止录音
     }
     isRecording = 0;
-
+    
     Running = false;
+
+    let btn = document.getElementById('start');
+    btn.style.backgroundColor = "#aaabac";
+    btn.innerHTML = "录音停止";
   })
 
 
@@ -125,16 +129,18 @@ document.getElementById('clean').addEventListener('click', function() {
   ws.send("RESET")                                              //提醒后端清除数据
 });
 
-/**点击停止录制按钮 */
-document.getElementById('end').addEventListener('click', function() {
-  if(isRecording == 1 && Running){                                       
-    mediaRecorder.stop();                                       //停止录音
-  }
-  isRecording = 0;
-});
+// /**点击停止录制按钮 */
+// document.getElementById('end').addEventListener('click', function() {
+//   if(isRecording == 1 && Running){                                       
+//     mediaRecorder.stop();                                       //停止录音
+//   }
+//   isRecording = 0;
+// });
 
 /**点击开始录制按钮 */
 document.getElementById('start').addEventListener('click', function() {
+  let btn = document.getElementById("start");
+
   if(isRecording == 0 && Running){ // 录制处于关闭状态
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => handleStream(stream))
@@ -142,8 +148,64 @@ document.getElementById('start').addEventListener('click', function() {
     // document.body.style.backgroundColor = '#40E0D0'; // 更改页面背景提示用户
     ws.send("START_RECORDING");
     console.log("Data sent: ","START_RECORDING")
+
+    btn.style.backgroundColor = "red";
+    btn.innerHTML = "录音中";
+  }else if(Running){
+    mediaRecorder.stop();                                       //停止录音
+    isRecording = 0;
+
+    btn.style.backgroundColor = "#008CBA";
+    btn.innerHTML = "录音停止";
+
   }
+
+
+
 });
+
+document.getElementById('download').addEventListener('click', function() {
+  if(isRecording == 1){
+    return ;
+  }
+  // 创建一个包含文本内容的Blob对象
+
+  let text = ""
+  if(PrevPackate != ""){
+    console.log("rawData",PrevPackate);
+    for(i = 0; i < PrevPackate.mainString.length;i++){
+      text = text + PrevPackate.mainString[i] + "\n";
+      if(i < PrevPackate.tranString.length)
+        text = text + PrevPackate.tranString[i] + "\n";
+    }
+  }
+
+  console.log("Download Content", text);
+
+  let file = new Blob([text], {type: 'text/plain'});
+
+  // 使用URL.createObjectURL方法将Blob对象转换为一个URL
+  var url = URL.createObjectURL(file);
+
+  // 创建一个新的a元素，并设置其href属性为上面生成的URL
+  var a = document.createElement('a');
+  a.href = url;
+
+  // 设置a元素的download属性，这样当用户点击这个元素时，浏览器就会下载这个URL指向的内容，并将其保存为一个文件
+  a.download = 'myFile.txt';
+
+  // 将a元素添加到文档中
+  document.body.appendChild(a);
+
+  // 模拟用户点击a元素，从而触发下载操作
+  a.click();
+
+  // 最后，从文档中移除a元素
+  document.body.removeChild(a);
+
+});
+
+
 
 /**处理麦克风数据流 */
 function handleStream(stream) {
@@ -244,7 +306,7 @@ function sendData(data) {
   reader.onloadend = function (evt) { // 监听reader完成读取
     if (evt.target.readyState == FileReader.DONE) { // DONE == 2
       ws.send(evt.target.result);
-      console.log('Data sent: ', evt.target.result);
+      // console.log('Data sent: ', evt.target.result);
     }
   };
 }
