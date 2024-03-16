@@ -1,10 +1,8 @@
 from flask import Flask,render_template, g
 from flask_sockets import Sockets
-import whisper
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import os
-import torch
 import json
 import requests
 import numpy as np
@@ -12,7 +10,6 @@ from threading import Thread
 import time
 import traceback
 from zhconv import convert
-import re
 
 from ppasr.predict import PPASRPredictor
 
