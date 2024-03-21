@@ -149,7 +149,7 @@ document.getElementById('start').addEventListener('click', function() {
 function handleStream(stream) {
   isRecording = 1;
   // 创建新的MediaRecorder对象
-  mediaRecorder = new MediaRecorder(stream,{mimeType: 'audio/webm'});
+  mediaRecorder = new MediaRecorder(stream,{mimeType: 'audio/mp4'});
   fileType = mediaRecorder.mimeType;
   console.log(mediaRecorder)
   mediaRecorder.onstop = function() {                           //mediaRecorder监听录制停止
