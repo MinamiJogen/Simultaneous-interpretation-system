@@ -7,10 +7,6 @@ var fileType = "";
 var PrevPackate = ""
 var Running = true
 
-const userAgent = navigator.userAgent;
-const isIOSOrPadOSOrWatchOS = /iPad|iPhone|iPod|Watch/i.test(userAgent);//判断是否为iOS/ipadOS/watchOS
-const isSafariOnMacOS = /^((?!chrome|android).)*safari/i.test(userAgent) && /Macintosh/i.test(userAgent);//判断是否是macOS且为Safari浏览器
-
 /**页面初始化 */
 window.onload = function() {
 
@@ -153,11 +149,12 @@ document.getElementById('start').addEventListener('click', function() {
 function handleStream(stream) {
   isRecording = 1;
   // 创建新的MediaRecorder对象
-  if (isIOSOrPadOSOrWatchOS || isSafariOnMacOS) {  
-    mediaRecorder = new MediaRecorder(stream,{mimeType: 'audio/mp4'});
-  }
-  else {
-    mediaRecorder = new MediaRecorder(stream,{mimeType: 'audio/webm'});
+  if (isAppleWebkit()) {
+    // 对于AppleWebkit设备，使用audio/mp4
+    mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/mp4'});
+  } else {
+    // 对于非AppleWebkit设备，使用audio/webm
+    mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
   }
   fileType = mediaRecorder.mimeType;
   console.log(mediaRecorder)
@@ -256,4 +253,12 @@ function sendData(data) {
       console.log('Data sent: ', evt.target.result);
     }
   };
+}
+
+function isAppleWebkit() {
+  var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  var isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+  var isSafariOnMac = /^((?!chrome|android).)*safari/i.test(userAgent) && /Macintosh/.test(userAgent);
+
+  return isIOS || isSafariOnMac;
 }
