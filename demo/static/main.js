@@ -256,9 +256,9 @@ function sendData(data) {
 }
 
 function isAppleWebkit() {
-  var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-  var isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-  var isSafariOnMac = /^((?!chrome|android).)*safari/i.test(userAgent) && /Macintosh/.test(userAgent);
+  var userAgent = navigator.userAgent || navigator.vendor || window.opera;//获取用户设备识别码
+  var isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;//判断是否是iOS移动设备
+  var isSafariOnMac = /^((?!chrome|android).)*safari/i.test(userAgent) && /Macintosh/.test(userAgent);//判断是否是macOS且是Safari浏览器
 
   return isIOS || isSafariOnMac;
 }
