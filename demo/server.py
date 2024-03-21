@@ -1,6 +1,5 @@
 from flask import Flask,render_template, g
 from flask_sockets import Sockets
-import whisper
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import os
