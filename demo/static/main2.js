@@ -7,6 +7,78 @@ var fileType = "";
 var PrevPackate = ""
 var Running = true
 
+var nowStartButton = "start start"
+var nowlang = 'cn';
+var languages={
+  'recog content':{
+    'cn':'识别内容',
+    'en':'Recognized Content'
+  },
+  'trans content':{
+    'cn':"翻译内容",
+    'en': 'Translated Content'
+  },
+  'start start':{
+    'cn':"开始录制",
+    'en':"Start Recording"
+  },
+  'start pause':{
+    'cn':'录制停止',
+    'en':'Recording Paused'
+  },
+  'start recording':{
+    'cn':'录制中',
+    'en':'Recording'
+  },
+  'contact us':{
+    'cn':'联系我们',
+    'en':'Contact Us'
+  },
+  'related links':{
+    'cn':'相关链接',
+    'en':'Related Links'
+  },
+  'language-change':{
+    'cn':'中',
+    'en':'Eng'
+  },
+
+  'clean':{
+    'cn':'清除内容',
+    'en':'Clean Content'
+  },
+
+  'download':{
+    'cn':'下载文档',
+    'en':'Download File'
+  },
+  'UM':{
+    'cn':' 澳门大学官网',
+    'en':' The University of Macau'
+  },
+  'NLP2CT':{
+    'cn':' 自然語言處理與中葡機器翻譯實驗室',
+    'en':' NLP2CT'
+  },
+  'start stop':{
+    'cn':'录音停止',
+    'en':'Recording Stop'
+  },
+
+  'font-size':{
+    'cn':'字',
+    'en':'font'
+  }
+
+}
+
+var nowfont = 0;
+var buttonFont = ['16px','20px','25px'];
+var textFont = ['1em','1.5em','2em'];
+var normalFont = ['1em','1.5em','2em'];
+
+
+
 /**页面初始化 */
 window.onload = function() {
 
@@ -32,7 +104,9 @@ window.onload = function() {
 
     let btn = document.getElementById('start');
     btn.style.backgroundColor = "#aaabac";
-    btn.innerHTML = "录音停止";
+
+    nowStartButton = "recording stop"
+    btn.innerHTML = languages[nowStartButton][nowlang];
   })
 
 
@@ -109,6 +183,50 @@ window.onload = function() {
   enc = new TextDecoder("utf-8");//解析arraybuffer
 };
 
+document.getElementById('language-change').addEventListener('click', function() {
+    console.log('language change',nowlang);
+    nowlang = (nowlang == 'cn')? 'en': 'cn';
+
+    document.getElementById('recog content').innerHTML = languages['recog content'][nowlang];
+    document.getElementById('trans content').innerHTML = languages['trans content'][nowlang];
+    document.getElementById('contact us').innerHTML = languages['contact us'][nowlang];
+    document.getElementById('related links').innerHTML = languages['related links'][nowlang];
+    document.getElementById('recog content').innerHTML = languages['recog content'][nowlang];
+    document.getElementById('start').innerHTML = languages[nowStartButton][nowlang];
+    document.getElementById('language-change').innerHTML = languages['language-change'][nowlang];
+    document.getElementById('clean').innerHTML = languages['clean'][nowlang];
+    document.getElementById('download').innerHTML = languages['download'][nowlang];
+    document.getElementById('font-size').innerHTML = languages['font-size'][nowlang];
+
+    link = document.getElementById('UM');
+    img = link.querySelector('img');
+    link.textContent = languages['UM'][nowlang];
+    link.insertBefore(img,link.firstChild);
+
+    link = document.getElementById('NLP2CT');
+    img = link.querySelector('img');
+    link.textContent = languages['NLP2CT'][nowlang];
+    link.insertBefore(img,link.firstChild);
+
+})
+
+document.getElementById('font-size').addEventListener('click', function(){
+    nowfont = nowfont + 1;
+    if( nowfont == 3){
+      nowfont = 0;
+    }
+
+    document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
+    document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
+    document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
+    document.getElementById('recog content').style.fontSize = normalFont[nowfont];
+    document.getElementById('trans content').style.fontSize = normalFont[nowfont];
+    document.getElementById('start').style.fontSize = buttonFont[nowfont];
+    document.getElementById('clean').style.fontSize = buttonFont[nowfont];
+    document.getElementById('download').style.fontSize = buttonFont[nowfont];
+
+
+})
 
 /**点击清除内容按钮 */
 document.getElementById('clean').addEventListener('click', function() {
@@ -150,13 +268,16 @@ document.getElementById('start').addEventListener('click', function() {
     console.log("Data sent: ","START_RECORDING")
 
     btn.style.backgroundColor = "red";
-    btn.innerHTML = "录音中";
+    nowStartButton = 'start recording';
+
+    btn.innerHTML = languages[nowStartButton][nowlang];
   }else if(Running){
     mediaRecorder.stop();                                       //停止录音
     isRecording = 0;
 
     btn.style.backgroundColor = "#008CBA";
-    btn.innerHTML = "录音停止";
+    nowStartButton = "start pause";
+    btn.innerHTML = languages[nowStartButton][nowlang];
 
   }
 

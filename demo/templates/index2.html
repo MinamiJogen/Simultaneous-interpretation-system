@@ -6,101 +6,109 @@
 <meta http-equiv="Cache" content="no-cache">
 <html>
 <head>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <title>WebRTC & WebSocket Audio Stream Demo</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+  <title>WeSpeak: Simutinously Interpretation System</title>
 </head>
 <body>
   <div class="topbar-container">
-    <img src="{{url_for('static', filename='image/logo.png')}}" style="height: 80pt;"> 
-
-    <h1>WeSpeak: Simutinously Interpretation System</h1>
+    <img src="{{url_for('static', filename='image/logo.png')}}" style="min-height: 50pt; height: 100%">
+	<!--<div class="title">
+		<h1>「同語」同声传译系统</h1>
+		<p class="english-title">WeSpeak: Simutinously Interpretation System</p>
+	</div>-->
+    <img src="{{url_for('static', filename='image/title.svg')}}" style="min-height: 20pt; height: 65%">
+    <div class="setting-container">
+      <button class="settingButton" id="language-change">中</button>
+      <button class="settingButton" id="font-size">字</button>
+    </div>
   </div>
   <div class="main-container">
     <div class="container">
       <div class="window">
-        <p class="normal-text">识别内容:</p>
+        <p class="normal-text" id='recog content'>识别内容:</p>
         <div id="recognition" class="scrollable-div">
-          
-          <p id="Hiscontent" class="black-text">test</p>
-          <p id="Nowcontent" class = "gray-text">test</p>
+          <div class="scroll">
+            <p id="Hiscontent" class="black-text">test</p>
+            <p id="Nowcontent" class = "gray-text">test</p>
+          </div>
         </div>
       </div>
       <div class="window">
-        <p class="normal-text">翻译内容:</p>
+        <p class="normal-text" id="trans content">翻译内容:</p>
         <div id="translation" class="scrollable-div">
-          
-          <p id="Trancontent" class = "blue-text">test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test
-            test</p>
+          <div class="scroll">
+            <p id="Trancontent" class = "blue-text">test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test
+              test</p>
+          </div>
         </div>
       </div>
     </div>
     <div class="button-container">
 
       <button id="start" onclick="">开始录制</button>
+      <!--<button id="end">结束录制</button>-->
       <button id="clean">清除内容</button>
       <button id="download">下载文档</button>
-
     </div>
   </div>
   <div class="foot-container">
     <div class="mark-container">
-      <img src="{{url_for('static', filename='image/nlp2ct.png')}}" style="height: 70pt;">
 
+      <img src="{{url_for('static', filename='image/nlp2ct.png')}}" class= "bottomImage" style="height: 50pt;">
 
-      <img src="{{url_for('static', filename='image/um.png')}}" style="height: 70pt;">
-
+      <img src="{{url_for('static', filename='image/um.png')}}" class= "bottomImage" style="height: 50pt;">
 
       
       <div class="contact">
-        <h4> 联系我们 </h4><br>
+        <h4 id="contact us"> 联系我们 </h4>
         <a class="linn" href="mailto:dc02764@um.edu.mo">
-          <img src="{{url_for('static',filename="image/mail.png")}}" style="height:1.1em; vertical-align: middle;">
+          <img src="{{url_for('static', filename='image/mail.png')}}" style="height:1.1em; vertical-align: middle;">
           dc02764@um.edu.mo
         </a>
+
         <br>
         <a class="linn" href="mailto:dc02727@um.edu.mo">
-          <img src="{{url_for('static',filename="image/mail.png")}}" style="height:1.1em; vertical-align: middle;">
+          <img src="{{url_for('static', filename='image/mail.png')}}" style="height:1.1em; vertical-align: middle;">
           dc02727@um.edu.mo
         </a>
       </div>
 
       <div class="link">
-        <h4> 相关链接 </h4><br>
+        <h4 id="related links"> 相关链接 </h4>
         <a class="linn" href="https://www.um.edu.mo/">
-          <img src="{{url_for('static',filename="image/link.png")}}" style="height:1.1em; vertical-align: middle;">  
+          <img src="{{url_for('static', filename='image/link.png')}}" style="height:1.1em; vertical-align: middle;">
           澳门大学官网
         </a>
         <br>
         <a class="linn" href="http://nlp2ct.cis.um.edu.mo/">
-          <img src="{{url_for('static',filename="image/link.png")}}" style="height:1.1em; vertical-align: middle;">  
+          <img src="{{url_for('static', filename='image/link.png')}}" style="height:1.1em; vertical-align: middle;">
           自然語言處理與中葡機器翻譯實驗室
         </a>
       </div>
@@ -111,6 +119,6 @@
     <p class="copyright">Copyright © 2024 NLP2CT, University of Macau</p>
 
   </div>
-  <script src="{{ url_for('static', filename='main2.js', _=14) }}"></script>
+  <script src="{{ url_for('static', filename='main2.js', _=12) }}"></script>
 </body>
 </html>

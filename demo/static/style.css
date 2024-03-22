@@ -30,12 +30,17 @@
     text-align: center; /* 居中对齐 */
     margin: 10px 10px;
     letter-spacing: 1px;
+	  margin-bottom: 0;
+	  margin-left: 0;
     }
 
   h4{
     margin:0;
     padding: 0;
-    font-size: 1.2em;
+    font-size: 1em;
+    margin-left: 1em;
+    margin-top: 5px;
+    margin-bottom: 10px;
   }
 
   body {
@@ -83,10 +88,15 @@
     background-color: #007B9A;
   }
 
+  a{
+    text-decoration: none;
+  }
+
   .topbar-container{
     display: flex;
     width: 100vw;
     height: 10%;
+    max-height: 15vw;
     /* min-height: 70pt; */
     background-color: white;
     box-shadow: 0px 0px 30px rgb(203, 209, 213);
@@ -94,6 +104,41 @@
     align-items: center;
 
   }
+	.title{
+		justify-content: center;
+	}
+  
+	.english-title{
+		color: #026989; /* 设置文字颜色为深灰色 */
+		font-family: Arial, sans-serif; /* 设置字体 */
+		margin: 10px 10px;
+		margin-top: 0;
+		margin-left: 30px;
+	}
+
+  .setting-container{
+    position: absolute;
+    right: 2%;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #language-change{
+    margin-right: 20px;
+  }
+
+  /* #font-size{
+    margin-right: 20px;
+  } */
+
+  .settingButton{
+    border-radius: 0;
+    background-color: #1d2b52;
+    margin: 0;
+    padding: 10px 10px;
+    /* padding: 0; */
+  }
+
 
   .main-container{
     width: 100vw;
@@ -182,14 +227,25 @@
   
   .scrollable-div {
     /* border: 1px solid black; */
+    display: flex;
     margin: 0;
     width: 100%;
     height: 80%;
-    overflow: auto;
-    padding: 3%;
+    padding-left: 2%;
+	  padding-right: 1%;
     background-color: white;
-    border-radius: 3vh;
+    border-radius: 10px;
     box-shadow: 0px 0px 30px rgb(203, 209, 213);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scroll{
+    box-sizing: border-box;
+    overflow: auto;
+    height: 98%;
+    width: 100%;
+    
   }
   
   .mark-container{
@@ -213,7 +269,7 @@
 
   .copyright{
     text-align: center;
-    margin: 0;
+    margin: 10px;
     font-size: small;
     position: absolute;
     bottom: 0;
@@ -222,9 +278,15 @@
 
   .normal-text{
     padding-left: 3vh;
+	max-height: 20%;
+	height: 40px;
+	margin: 0;
+  
+	display: flex;
+	align-items: center;
   }
-
-  @media screen and (max-height: 400px) {
+ /*小窗*/
+  @media screen and (max-height: 300px) {
     .topbar-container{
       display: none;
     }
@@ -263,9 +325,62 @@
     }
 
   }
+ /*手机*/
+  @media screen and (max-aspect-ratio: 9/9){
 
-  @media scree and (max-width:600px){
+	
     .foot-container{
       height: 30%;
     }
+    .link{
+      width:40%;
+	  height: auto;
+    }
+
+    .contact{
+      width:40%;
+	  height: auto;
+    }
+	.window{
+		width: 80%;
+		margin: 0;
+		height: 50%;
+		padding: 0;
+		margin-left: 5%;
+		
+	}
+	
+	.container{
+		display: block;
+		align-items: center;
+		justify-items: center;
+		height: 80%;
+	}
+	
+	.mark-container{
+		margin-bottom: 10%;
+		align-items: baseline;
+	}
+	
+	.foot-container{
+		height: auto;
+		
+	}
+
+  .bottomImage{
+    margin-left: 25%;
+    margin-right: 25%;
+  }
+	
+	
+	
+	
+/* 	button{
+		font-size: 1.5em;
+	}
+	
+	p{
+		font-size: 1.2em;
+	} */
+	
   }
