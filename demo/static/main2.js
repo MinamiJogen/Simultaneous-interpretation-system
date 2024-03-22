@@ -86,7 +86,7 @@ window.onload = function() {
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
 
   try{
-    ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
+    ws = new WebSocket("ws://localhost:8080/echo");               //建立socket
     console.log('socket set',ws);
   }catch (err){
     window.alert("Web socket cannot connect!!!" + err.message);
@@ -332,7 +332,13 @@ document.getElementById('download').addEventListener('click', function() {
 function handleStream(stream) {
   isRecording = 1;
   // 创建新的MediaRecorder对象
-  mediaRecorder = new MediaRecorder(stream,{mimeType: 'audio/webm'});
+  if (isAppleWebkit()) {
+    // 对于AppleWebkit设备，使用audio/mp4
+    mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/mp4'});
+  } else {
+    // 对于非AppleWebkit设备，使用audio/webm
+    mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+  }
   fileType = mediaRecorder.mimeType;
   console.log(mediaRecorder)
   mediaRecorder.onstop = function() {                           //mediaRecorder监听录制停止
@@ -430,4 +436,12 @@ function sendData(data) {
       // console.log('Data sent: ', evt.target.result);
     }
   };
+}
+
+function isAppleWebkit() {
+  var userAgent = navigator.userAgent || navigator.vendor || window.opera;//获取用户设备识别码
+  var isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;//判断是否是iOS移动设备
+  var isSafariOnMac = /^((?!chrome|android).)*safari/i.test(userAgent) && /Macintosh/.test(userAgent);//判断是否是macOS且是Safari浏览器
+
+  return isIOS || isSafariOnMac;
 }
