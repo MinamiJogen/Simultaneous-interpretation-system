@@ -76,7 +76,7 @@ print("加载标点模型...")
 
 ##model 2
 from ppasr.infer_utils.pun_predictor import PunctuationPredictor
-pun_predictor = PunctuationPredictor(model_dir='models\pun_models3', use_gpu=False)
+pun_predictor = PunctuationPredictor(model_dir='models/pun_models3', use_gpu=False)
 
 
 
