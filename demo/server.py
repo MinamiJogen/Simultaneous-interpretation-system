@@ -3,6 +3,7 @@ from flask_sockets import Sockets
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import os
+import torch
 import json
 import requests
 import numpy as np
@@ -10,15 +11,14 @@ from threading import Thread
 import time
 import traceback
 from zhconv import convert
+import re
 
+import whisper
 from ppasr.predict import PPASRPredictor
 
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-
-
-
 
 
 
@@ -42,6 +42,9 @@ nowString = ""                                                      #当前识�
 tranString = []
 CutSeconde = 0
 Cutted = False
+RecogMode = 'zh-en'
+Modes = ["zh-en","en-zh"]
+
 
 THRESHOLD = 1.0
 
@@ -55,7 +58,7 @@ predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use
 # model = whisper.load_model('tiny', device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
-
+enmodel = whisper.load_model('tiny.en', device=DEVICE)
 head = ""
 
 
@@ -73,7 +76,7 @@ print("加载标点模型...")
 
 ##model 2
 from ppasr.infer_utils.pun_predictor import PunctuationPredictor
-pun_predictor = PunctuationPredictor(model_dir='models/pun_models3', use_gpu=False)
+pun_predictor = PunctuationPredictor(model_dir='models\pun_models3', use_gpu=False)
 
 
 
@@ -265,25 +268,41 @@ def punctuation(text):
 
 def translation(text):
     # return ""
+    
+    
+    
     url = "https://umcat.cis.um.edu.mo/api/translate.php"
 
-    data = {
-        'from':"zh-cn",
-        'to':'en',
-        'text':text,
+    if(RecogMode == 'zh-en'):      
+        data = {
+            'from':"zh-cn",
+            'to':'en',
+            'text':text,
 
-        'system':"UTI"
-    }
+            'system':"UTI"
+        }
+    elif(RecogMode == 'en-zh'):
+        data = {
+            'from':'en',
+            'to':'zh-cn',
+            'text': text,
+            'system':'UTI'
+        }
+    
     t1 = time.time()
-    response = requests.post(url,json=data)
-    response_dic = response.json()
-    # print(response_dic)
+    rr = text
+    while(rr == text):
+        response = requests.post(url,json=data)
+        response_dic = response.json()
+        # print(response_dic)
+        rr = response_dic['translation'][0]['translated'][0]['text'] 
 
-    # status_code = response.status_code
-    # print(status_code)
+        # status_code = response.status_code
+        # print(status_code)
     t2 = time.time()
+
     print(f"trans time:{t2 - t1}")
-    return response_dic['translation'][0]['translated'][0]['text'] 
+    return rr
 
 def recognition(fileList):
 
@@ -305,8 +324,10 @@ def recognition(fileList):
     
 
     # #ppasr
-    result = predictor.predict(audio_data=fileList, use_pun=False)['text']
-
+    if(RecogMode == 'zh-en'):
+        result = predictor.predict(audio_data=fileList, use_pun=False)['text']
+    elif(RecogMode == 'en-zh'):
+        result = enmodel.transcribe(fileList)["text"]
     return result
 
 def audioSlice(filename):
@@ -498,9 +519,9 @@ def newThread(data,ws,flag):
             print(f"total recognition time:{t2 - t1}")
 
 
-            if("一个市镇的一个市镇" in totaledResult or
-               "一个建筑的一个建筑" in totaledResult):
-                nowString = ""
+            # if("一个市镇的一个市镇" in totaledResult or
+            #    "一个建筑的一个建筑" in totaledResult):
+            #     nowString = ""
 
 
             if(totaledResult == nowString and nowString != ""):
@@ -555,36 +576,63 @@ def P_TThread(text,ws):
     global nowString, mainString, tranString
     global puncOnUse 
 
-
-    while(puncOnUse):
-        continue
-
-    puncOnUse = True
-    textPunc = punctuation(text)
-    puncOnUse = False
-
     def find_from_end(lst, target):
         # 从后向前查找元素，返回位置
         for i in range(len(lst)-1, -1, -1):
             if lst[i] == target:
                 return i
         return -1
-    # 找到最后一个子字符串的位置
-    last_occurrence_position = find_from_end(mainString,text)
+    if(RecogMode == "zh-en"):
+        while(puncOnUse):
+            continue
+
+        puncOnUse = True
+        textPunc = punctuation(text)
+        puncOnUse = False
+
+
+        # 找到最后一个子字符串的位置
+        last_occurrence_position = find_from_end(mainString,text)
 
 
 
-    # 如果找到了子字符串
-    if last_occurrence_position != -1:
-        # 替换最后一个子字符串
-        mainString[last_occurrence_position] = textPunc
-    else:
-        mainString.append(textPunc)
-    wsSend(ws)
+        # 如果找到了子字符串
+        if last_occurrence_position != -1:
+            # 替换最后一个子字符串
+            mainString[last_occurrence_position] = textPunc
+        else:
+            mainString.append(textPunc)
+        wsSend(ws)
 
-    textTrans = translation(textPunc)
-    tranString.append(textTrans)
-    wsSend(ws)
+        textTrans = translation(textPunc)
+        tranString.append(textTrans)
+        wsSend(ws)
+    elif(RecogMode == 'en-zh'):
+        textTrans = translation(text)
+        tranString.append(textTrans)
+        wsSend(ws)
+        
+        while(puncOnUse):
+            continue
+
+        puncOnUse = True
+        textTranPunc = punctuation(textTrans)
+        puncOnUse = False
+
+
+        # 找到最后一个子字符串的位置
+        last_occurrence_position = find_from_end(tranString,textTrans)
+
+
+
+        # 如果找到了子字符串
+        if last_occurrence_position != -1:
+            # 替换最后一个子字符串
+            tranString[last_occurrence_position] = textTranPunc
+        else:
+            tranString.append(textTranPunc)
+        wsSend(ws)       
+        
 
 #websocket端口函数
 @sockets.route('/echo')
@@ -599,7 +647,7 @@ def echo_socket(ws):
     global head
     global count
     global Cutted
-
+    global RecogMode
     print("ws set")
 
     if(recogOnUse):
@@ -615,7 +663,7 @@ def echo_socket(ws):
             exit(0)
             
         audio_data = ws.receive()                                       #读取sockets数据，此为阻塞调用（等待直到有新数据传入）
-
+        # print(audio_data)
         #print(clockFlag)
         if(audio_data == "START_RECORDING"):                            #1. 前端提醒音频开始传输
             print("start recording")
@@ -649,7 +697,12 @@ def echo_socket(ws):
             nowString = ""  
             tranString = []
 
-
+        elif(audio_data in Modes):
+            if(clockFlag != 2):
+                continue
+            print(f"model change:{audio_data}")
+            RecogMode = audio_data            
+            
         elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
             ws_audio_data[ws].append(audio_data)
             print("detect clock")                                       
@@ -691,7 +744,7 @@ def init():
     mainString = []
     nowString = ""
     tranString = []
-    clockFlag = None
+    clockFlag = 2
     recogOnUse = False
     recogOnUse = False                                                  #True：模型对象正在使用
     onPosProcess = False                                                #True：正在进行后处理

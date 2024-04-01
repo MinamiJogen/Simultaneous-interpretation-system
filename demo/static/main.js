@@ -7,8 +7,9 @@ var fileType = "";
 var PrevPackate = ""
 var Running = true
 
-var nowStartButton = "start start"
+var nowStartButton = "start start";
 var nowlang = 'cn';
+var nowModel = 'zh-en';
 var languages={
   'recog content':{
     'cn':'识别内容',
@@ -23,7 +24,7 @@ var languages={
     'en':"Start Recording"
   },
   'start pause':{
-    'cn':'录制停止',
+    'cn':'录制暂停',
     'en':'Recording Paused'
   },
   'start recording':{
@@ -61,13 +62,21 @@ var languages={
     'en':' NLP2CT'
   },
   'start stop':{
-    'cn':'录音停止',
+    'cn':'录制停止',
     'en':'Recording Stop'
   },
 
   'font-size':{
     'cn':'字',
-    'en':'font'
+    'en':'Font'
+  },
+  'zh-en':{
+    'cn':'中-英',
+    'en':'zh-en'
+  },
+  'en-zh':{
+    'cn':'英-中',
+    'en':'en-zh'
   }
 
 }
@@ -81,6 +90,16 @@ var normalFont = ['1em','1.5em','2em'];
 
 /**页面初始化 */
 window.onload = function() {
+
+  if(isMobileDevice()){
+    textFont = ['2em','2.1em','2.2em'];
+    normalFont = ['2em','2.1em','2.2em'];
+    buttonFont = ['25px','28px','30px'];
+
+    document.getElementById('language-change').style.fontSize = '2em';
+    document.getElementById('font-size').style.fontSize = '2em';
+    document.getElementById('model').style.fontSize = '2em';
+  }
 
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
@@ -105,7 +124,7 @@ window.onload = function() {
     let btn = document.getElementById('start');
     btn.style.backgroundColor = "#aaabac";
 
-    nowStartButton = "recording stop"
+    nowStartButton = "start stop"
     btn.innerHTML = languages[nowStartButton][nowlang];
   })
 
@@ -123,7 +142,7 @@ window.onload = function() {
     const Hiscontent = document.getElementById('Hiscontent'); 
     Hiscontent.innerHTML = splicing(receivedData.mainString);
     if(rcheck){
-      let div = document.getElementById('recognition');
+      let div = document.getElementById('recognition-scroll');
       div.scrollTop = div.scrollHeight;
     }
 
@@ -138,9 +157,9 @@ window.onload = function() {
 
     if(PrevPackate == ""){
       let speed = 500.0 / receivedData.nowString.length
-      typeWriter('Nowcontent','recognition', receivedData.nowString,speed)
+      typeWriter('Nowcontent','recognition-scroll', receivedData.nowString,speed)
       speed = 500.0 / splicing(receivedData.tranString).length
-      typeWriter('Trancontent','translation', splicing(receivedData.tranString),speed)
+      typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString),speed)
 
     }else{
       
@@ -148,14 +167,14 @@ window.onload = function() {
         TranCommon = getCommonPrefix(splicing(PrevPackate.tranString), splicing(receivedData.tranString))
         Trancontent.innerHTML = splicing(receivedData.tranString).substring(0,TranCommon);
         let speed = 700.0 / splicing(receivedData.tranString).substring(TranCommon).length
-        setTimeout(typeWriter('Trancontent','translation', splicing(receivedData.tranString).substring(TranCommon),speed),0)
+        setTimeout(typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString).substring(TranCommon),speed),0)
       }
       
       if(receivedData.nowString !== ""){
         NowCommon = getCommonPrefix(PrevPackate.nowString, receivedData.nowString)
         Nowcontent.innerHTML = receivedData.nowString.substring(0,NowCommon); 
         let speed = 500.0 / receivedData.nowString.substring(NowCommon).length
-        setTimeout(typeWriter('Nowcontent','recognition', receivedData.nowString.substring(NowCommon),speed),0)
+        setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString.substring(NowCommon),speed),0)
       }else{
         Nowcontent.innerHTML = ""; 
       }
@@ -197,6 +216,9 @@ document.getElementById('language-change').addEventListener('click', function() 
     document.getElementById('clean').innerHTML = languages['clean'][nowlang];
     document.getElementById('download').innerHTML = languages['download'][nowlang];
     document.getElementById('font-size').innerHTML = languages['font-size'][nowlang];
+    document.getElementById('model').innerHTML = languages[nowModel][nowlang];
+    document.getElementById("zh-en").innerHTML = languages["zh-en"][nowlang];
+    document.getElementById("en-zh").innerHTML = languages["en-zh"][nowlang];
 
     link = document.getElementById('UM');
     img = link.querySelector('img');
@@ -246,6 +268,58 @@ document.getElementById('clean').addEventListener('click', function() {
 
   ws.send("RESET")                                              //提醒后端清除数据
 });
+
+document.getElementById('model').addEventListener('click', function() {
+  var x = document.getElementById("hiddenButton");
+  var fa = document.getElementById("model");
+  var rect = fa.getBoundingClientRect();
+
+  x.style.top = rect.bottom +"px";
+  x.style.width = rect.width + "px";
+  x.style.left = rect.left + "px";
+
+  // console.log("position",[rect.bottom,rect.left])
+  // console.log("realposition",[x.style.top,x.style.left])
+
+  var buttons = document.querySelectorAll("#hiddenButton button")
+
+  for(i=0;i<buttons.length;i++){
+    if(buttons[i].innerHTML == fa.innerHTML){
+      buttons[i].style.display = "none";
+      // console.log("hide",buttons[i]);
+    }else{
+      buttons[i].style.display = "block";
+      // console.log("show",buttons[i]);
+    }
+  }
+
+
+  if(x.style.display == "none"){
+    x.style.display = "block";
+  }else{
+    x.style.display = "none";
+  }
+  
+});
+
+
+function selectMode(mode){
+  document.getElementById('hiddenButton').style.display = "none";
+
+  if(isRecording == 1 || !Running){
+    return;
+  }
+  if(mode != nowModel){
+    
+    nowModel = mode
+    document.getElementById('model').innerHTML = languages[nowModel][nowlang];
+    console.log("reset model",nowModel)
+    ws.send('RESET')
+    ws.send(nowModel)
+  }
+
+}
+
 
 // /**点击停止录制按钮 */
 // document.getElementById('end').addEventListener('click', function() {
@@ -444,4 +518,8 @@ function isAppleWebkit() {
   var isSafariOnMac = /^((?!chrome|android).)*safari/i.test(userAgent) && /Macintosh/.test(userAgent);//判断是否是macOS且是Safari浏览器
 
   return isIOS || isSafariOnMac;
+}
+
+function isMobileDevice(){
+  return (typeof window.orientation != 'undefined' || (navigator.userAgent.indexOf('IEMobile') !== -1));
 }

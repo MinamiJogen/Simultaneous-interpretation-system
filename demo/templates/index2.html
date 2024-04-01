@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
@@ -18,8 +19,13 @@
 	</div>-->
     <img src="{{url_for('static', filename='image/title.svg')}}" style="min-height: 20pt; height: 65%">
     <div class="setting-container">
+      <button class="settingButton" id="model">中-英</button>
       <button class="settingButton" id="language-change">中</button>
       <button class="settingButton" id="font-size">字</button>
+    </div>
+    <div id = "hiddenButton" class = "hiddenButton" style="display: none; position: absolute;">
+      <button class="settingButton" id="zh-en" onclick="selectMode('zh-en')">中-英</button>
+      <button class="settingButton" id="en-zh" onclick="selectMode('en-zh')">英-中</button>
     </div>
   </div>
   <div class="main-container">
@@ -27,7 +33,7 @@
       <div class="window">
         <p class="normal-text" id='recog content'>识别内容:</p>
         <div id="recognition" class="scrollable-div">
-          <div class="scroll">
+          <div class="scroll" id="recognition-scroll">
             <p id="Hiscontent" class="black-text">test</p>
             <p id="Nowcontent" class = "gray-text">test</p>
           </div>
@@ -36,7 +42,7 @@
       <div class="window">
         <p class="normal-text" id="trans content">翻译内容:</p>
         <div id="translation" class="scrollable-div">
-          <div class="scroll">
+          <div class="scroll" id="translation-scroll">
             <p id="Trancontent" class = "blue-text">test
               test
               test
@@ -102,12 +108,12 @@
 
       <div class="link">
         <h4 id="related links"> 相关链接 </h4>
-        <a class="linn" href="https://www.um.edu.mo/">
+        <a class="linn" id="UM" href="https://www.um.edu.mo/">
           <img src="{{url_for('static', filename='image/link.png')}}" style="height:1.1em; vertical-align: middle;">
           澳门大学官网
         </a>
         <br>
-        <a class="linn" href="http://nlp2ct.cis.um.edu.mo/">
+        <a class="linn" id="NLP2CT" href="http://nlp2ct.cis.um.edu.mo/">
           <img src="{{url_for('static', filename='image/link.png')}}" style="height:1.1em; vertical-align: middle;">
           自然語言處理與中葡機器翻譯實驗室
         </a>
@@ -119,6 +125,6 @@
     <p class="copyright">Copyright © 2024 NLP2CT, University of Macau</p>
 
   </div>
-  <script src="{{ url_for('static', filename='main2.js', _=12) }}"></script>
+  <script src="{{ url_for('static', filename='main2.js', _=19) }}"></script>
 </body>
 </html>
