@@ -103,6 +103,7 @@ window.onload = function() {
     document.getElementById('model').style.fontSize = '35px';
     document.getElementById('zh-en').style.fontSize = '35px';
     document.getElementById('en-zh').style.fontSize = '35px';
+    document.getElementById('title').style.width = '50vw';
     
   }
   document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
