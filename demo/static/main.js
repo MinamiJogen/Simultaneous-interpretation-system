@@ -104,15 +104,17 @@ window.onload = function() {
     document.getElementById('zh-en').style.fontSize = '2.5em';
     document.getElementById('en-zh').style.fontSize = '2.5em';
     window.alert("set font")
-    document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
-    document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
-    document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
-    document.getElementById('recog content').style.fontSize = normalFont[nowfont];
-    document.getElementById('trans content').style.fontSize = normalFont[nowfont];
-    document.getElementById('start').style.fontSize = buttonFont[nowfont];
-    document.getElementById('clean').style.fontSize = buttonFont[nowfont];
-    document.getElementById('download').style.fontSize = buttonFont[nowfont];
   }
+
+  document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
+  document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
+  document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
+  document.getElementById('recog content').style.fontSize = normalFont[nowfont];
+  document.getElementById('trans content').style.fontSize = normalFont[nowfont];
+  document.getElementById('start').style.fontSize = buttonFont[nowfont];
+  document.getElementById('clean').style.fontSize = buttonFont[nowfont];
+  document.getElementById('download').style.fontSize = buttonFont[nowfont];
+
 
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
