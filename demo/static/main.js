@@ -94,15 +94,15 @@ window.onload = function() {
   if(isMobileDevice()){
     document.body.style.fontSize = '2.5em';
 
-    textFont = ['2.5em','3em','3.5em'];
-    normalFont = ['2em','3em','3.5em'];
+    textFont = ['35px','40px','50px'];
+    normalFont = ['35px','40px','50px'];
     buttonFont = ['35px','40px','50px'];
     // 设置字体大小为20px
-    document.getElementById('language-change').style.fontSize = '2.5em';
-    document.getElementById('font-size').style.fontSize = '2.5em';
-    document.getElementById('model').style.fontSize = '2.5em';
-    document.getElementById('zh-en').style.fontSize = '2.5em';
-    document.getElementById('en-zh').style.fontSize = '2.5em';
+    document.getElementById('language-change').style.fontSize = '35px';
+    document.getElementById('font-size').style.fontSize = '35px';
+    document.getElementById('model').style.fontSize = '35px';
+    document.getElementById('zh-en').style.fontSize = '35px';
+    document.getElementById('en-zh').style.fontSize = '35px';
     
   }
   document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
