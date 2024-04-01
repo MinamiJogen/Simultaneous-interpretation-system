@@ -92,13 +92,24 @@ var normalFont = ['1em','1.5em','2em'];
 window.onload = function() {
 
   if(isMobileDevice()){
-    textFont = ['2em','2.1em','2.2em'];
-    normalFont = ['2em','2.1em','2.2em'];
-    buttonFont = ['25px','28px','30px'];
+    document.body.style.fontSize = '2.5em';
 
-    document.getElementById('language-change').style.fontSize = '2em';
-    document.getElementById('font-size').style.fontSize = '2em';
-    document.getElementById('model').style.fontSize = '2em';
+    textFont = ['2.5em','3em','3.5em'];
+    normalFont = ['2em','3em','3.5em'];
+    buttonFont = ['35px','40px','50px'];
+    // 设置字体大小为20px
+    document.getElementById('language-change').style.fontSize = '2.5em';
+    document.getElementById('font-size').style.fontSize = '2.5em';
+    document.getElementById('model').style.fontSize = '2.5em';
+    
+    document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
+    document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
+    document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
+    document.getElementById('recog content').style.fontSize = normalFont[nowfont];
+    document.getElementById('trans content').style.fontSize = normalFont[nowfont];
+    document.getElementById('start').style.fontSize = buttonFont[nowfont];
+    document.getElementById('clean').style.fontSize = buttonFont[nowfont];
+    document.getElementById('download').style.fontSize = buttonFont[nowfont];
   }
 
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
