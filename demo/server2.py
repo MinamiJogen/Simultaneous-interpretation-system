@@ -27,9 +27,10 @@ sockets = Sockets(app)
 
 
 # DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-DEVICE = 'cpu'
+# DEVICE = 'cpu'
+DEVICE = 'cuda'
 print(f"Using device:{DEVICE}")
-
+use_gpu = True if(DEVICE =='cuda') else False
 clockFlag = None                                                    #时钟线程与主线程用于沟通的参数 
                                                                         #1：时钟中断主线程 0：主线程完成任务，等待时钟中断 2：时钟停止
 ws_audio_data = {}                                                  #存储不同websocket发送数据的缓存字典
@@ -54,11 +55,11 @@ count = 0
 
 print("加载识别模型...")
 ####识别模型
-predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= False)
+predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= True)
 # model = whisper.load_model('tiny', device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
-enmodel = whisper.load_model('tiny.en', device=DEVICE)
+enmodel = whisper.load_model('small.en', device=DEVICE)
 head = ""
 
 

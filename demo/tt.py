@@ -1,4 +1,4 @@
-import whisper
+import torch
 
-enmodel = whisper.load_model('tiny.en')
+print(torch.cuda.is_available())
 

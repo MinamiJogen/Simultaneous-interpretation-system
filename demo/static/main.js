@@ -101,6 +101,8 @@ window.onload = function() {
     document.getElementById('language-change').style.fontSize = '2.5em';
     document.getElementById('font-size').style.fontSize = '2.5em';
     document.getElementById('model').style.fontSize = '2.5em';
+    document.getElementById('zh-en').style.fontSize = '2.5em';
+    document.getElementById('en-zh').style.fontSize = '2.5em';
     
     document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
     document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
