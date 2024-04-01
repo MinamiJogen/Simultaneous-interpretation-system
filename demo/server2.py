@@ -55,7 +55,7 @@ count = 0
 
 print("加载识别模型...")
 ####识别模型
-predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= True)
+predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= use_gpu)
 # model = whisper.load_model('tiny', device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
@@ -77,7 +77,7 @@ print("加载标点模型...")
 
 ##model 2
 from ppasr.infer_utils.pun_predictor import PunctuationPredictor
-pun_predictor = PunctuationPredictor(model_dir='models\pun_models3', use_gpu=False)
+pun_predictor = PunctuationPredictor(model_dir='models\pun_models3', use_gpu=use_gpu)
 
 
 
