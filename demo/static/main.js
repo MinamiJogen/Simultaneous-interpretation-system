@@ -98,11 +98,11 @@ window.onload = function() {
     normalFont = ['35px','40px','50px'];
     buttonFont = ['35px','40px','50px'];
     // 设置字体大小为20px
-    document.getElementById('language-change').style.fontSize = '35px';
-    document.getElementById('font-size').style.fontSize = '35px';
-    document.getElementById('model').style.fontSize = '35px';
-    document.getElementById('zh-en').style.fontSize = '35px';
-    document.getElementById('en-zh').style.fontSize = '35px';
+    document.getElementById('language-change').style.fontSize = '45px';
+    document.getElementById('font-size').style.fontSize = '45px';
+    document.getElementById('model').style.fontSize = '45px';
+    document.getElementById('zh-en').style.fontSize = '45px';
+    document.getElementById('en-zh').style.fontSize = '45px';
     document.getElementById('title').style.width = '50vw';
     
   }
