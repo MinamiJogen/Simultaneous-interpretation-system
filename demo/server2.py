@@ -27,8 +27,8 @@ sockets = Sockets(app)
 
 
 # DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-# DEVICE = 'cpu'
-DEVICE = 'cuda'
+DEVICE = 'cpu'
+# DEVICE = 'cuda'
 print(f"Using device:{DEVICE}")
 use_gpu = True if(DEVICE =='cuda') else False
 clockFlag = None                                                    #时钟线程与主线程用于沟通的参数 

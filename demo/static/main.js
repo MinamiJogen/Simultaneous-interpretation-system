@@ -105,7 +105,6 @@ window.onload = function() {
     document.getElementById('en-zh').style.fontSize = '2.5em';
     
   }
-  window.alert("set font")
   document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
   document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
   document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
