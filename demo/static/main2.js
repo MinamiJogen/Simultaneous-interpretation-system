@@ -179,7 +179,7 @@ window.onload = function() {
 
     }else{
       
-      if(receivedData.tranString !== ""){
+      if(receivedData.tranString !== "" && receivedData.tranString.length != PrevPackate.tranString.length){
         TranCommon = getCommonPrefix(splicing(PrevPackate.tranString), splicing(receivedData.tranString))
         Trancontent.innerHTML = splicing(receivedData.tranString).substring(0,TranCommon);
         let speed = 700.0 / splicing(receivedData.tranString).substring(TranCommon).length
