@@ -77,6 +77,16 @@ var languages={
   'en-zh':{
     'cn':'英-中',
     'en':'en-zh'
+  },
+
+  'en-pt':{
+    'cn':'英-葡',
+    'en':'en-pt'
+  },
+
+  'zh-pt':{
+    'cn':'中-葡',
+    'en':'zh-pt'
   }
 
 }
@@ -98,11 +108,15 @@ window.onload = function() {
     normalFont = ['35px','40px','50px'];
     buttonFont = ['35px','40px','50px'];
     // 设置字体大小为20px
+    
+
     document.getElementById('language-change').style.fontSize = '45px';
     document.getElementById('font-size').style.fontSize = '45px';
     document.getElementById('model').style.fontSize = '45px';
     document.getElementById('zh-en').style.fontSize = '45px';
     document.getElementById('en-zh').style.fontSize = '45px';
+    document.getElementById('en-pt').style.fontSize = '45px';
+    document.getElementById('en-pt').style.fontSize = '45px';
     document.getElementById('title').style.width = '50vw';
     
   }
@@ -115,12 +129,11 @@ window.onload = function() {
   document.getElementById('clean').style.fontSize = buttonFont[nowfont];
   document.getElementById('download').style.fontSize = buttonFont[nowfont];
 
-
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
 
   try{
-    ws = new WebSocket("wss://wespeak.today:8080/echo");               //建立socket
+    ws = new WebSocket("wespeak.today:8080");               //建立socket
     console.log('socket set',ws);
   }catch (err){
     window.alert("Web socket cannot connect!!!" + err.message);
@@ -217,6 +230,15 @@ window.onload = function() {
   enc = new TextDecoder("utf-8");//解析arraybuffer
 };
 
+window.addEventListener("beforeunload", (event) => {
+  if(isRecording == 1)
+    setTimeout(function() {
+      ws.send("STOP_RECORDING");                                      // 提醒后端停止录制
+      //ws.send(fileType);
+      console.log("Data sent: ", "STOP_RECORDING");},100);
+});
+
+
 document.getElementById('language-change').addEventListener('click', function() {
     console.log('language change',nowlang);
     nowlang = (nowlang == 'cn')? 'en': 'cn';
@@ -234,6 +256,8 @@ document.getElementById('language-change').addEventListener('click', function() 
     document.getElementById('model').innerHTML = languages[nowModel][nowlang];
     document.getElementById("zh-en").innerHTML = languages["zh-en"][nowlang];
     document.getElementById("en-zh").innerHTML = languages["en-zh"][nowlang];
+    document.getElementById('zh-pt').innerHTML = languages['zh-pt'][nowlang];
+    document.getElementById('en-pt').innerHTML = languages['en-pt'][nowlang];
 
     link = document.getElementById('UM');
     img = link.querySelector('img');
@@ -331,6 +355,17 @@ function selectMode(mode){
     console.log("reset model",nowModel)
     ws.send('RESET')
     ws.send(nowModel)
+
+    const Hiscontent = document.getElementById('Hiscontent');             //动态更新到页面
+    const Nowcontent = document.getElementById('Nowcontent');
+    const Trancontent = document.getElementById('Trancontent');
+  
+    Trancontent.innerHTML = ""
+    Hiscontent.innerHTML = ""
+    Nowcontent.innerHTML = ""
+  
+    PrevPackate = ""
+
   }
 
 }

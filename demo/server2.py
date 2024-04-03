@@ -50,7 +50,7 @@ tranString = {}
 CutSeconde = {}
 Cutted = {}
 RecogMode = {}
-Modes = ["zh-en","en-zh"]
+Modes = ["zh-en","en-zh","zh-pt","en-pt"]
 
 
 THRESHOLD = 1.0
@@ -293,7 +293,6 @@ def translation(text,ws):
             'from':"zh-cn",
             'to':'en',
             'text':text,
-
             'system':"UTI"
         }
     elif(RecogMode[ws] == 'en-zh'):
@@ -303,7 +302,20 @@ def translation(text,ws):
             'text': text,
             'system':'UTI'
         }
-    
+    elif(RecogMode[ws] == "en-pt"):
+        data = {
+            'from':'en',
+            'to':'pt',
+            'text': text,
+            'system':'UTI'
+        }
+    elif(RecogMode[ws] == "zh-pt"):
+        data = {
+            'from':"zh-cn",
+            'to':'pt',
+            'text':text,
+            'system':"UTI"
+        }
     t1 = time.time()
     rr = text
     while(rr == text):
@@ -341,11 +353,11 @@ def recognition(fileList,ws):
     # #ppasr
     global recogENOnUse
     global recogZHOnUse
-    if(RecogMode[ws] == 'zh-en'):
+    if(RecogMode[ws] == 'zh-en' or RecogMode[ws] == 'zh-pt'):
         recogZHOnUse.acquire()
         result = predictor.predict(audio_data=fileList, use_pun=False)['text']
         recogZHOnUse.release()
-    elif(RecogMode[ws] == 'en-zh'):
+    elif(RecogMode[ws] == 'en-zh' or RecogMode =='en-pt'):
         recogENOnUse.acquire()
         result = enmodel.transcribe(fileList)["text"]
         recogENOnUse.release()
@@ -606,7 +618,7 @@ def P_TThread(text,ws):
             if lst[i] == target:
                 return i
         return -1
-    if(RecogMode[ws] == "zh-en"):
+    if(RecogMode[ws] == "zh-en" or RecogMode[ws] == "zh-pt"):
         # while(puncOnUse):
         #     continue
 
@@ -640,15 +652,18 @@ def P_TThread(text,ws):
         # 找到最后一个子字符串的位置
         last_occurrence_position = find_from_end(tranString[ws],textTrans)
 
-
-
         # 如果找到了子字符串
         if last_occurrence_position != -1:
             # 替换最后一个子字符串
             tranString[ws][last_occurrence_position] = textTranPunc
         else:
             tranString[ws].append(textTranPunc)
-        wsSend(ws)       
+        wsSend(ws)      
+    elif(RecogMode[ws] == "en-pt"):
+        textTrans = translation(text,ws)
+        tranString[ws].append(textTrans)
+        wsSend(ws)
+        
       
 
 #websocket端口函数

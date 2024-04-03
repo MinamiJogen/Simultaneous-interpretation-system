@@ -77,6 +77,16 @@ var languages={
   'en-zh':{
     'cn':'英-中',
     'en':'en-zh'
+  },
+
+  'en-pt':{
+    'cn':'英-葡',
+    'en':'en-pt'
+  },
+
+  'zh-pt':{
+    'cn':'中-葡',
+    'en':'zh-pt'
   }
 
 }
@@ -105,6 +115,8 @@ window.onload = function() {
     document.getElementById('model').style.fontSize = '45px';
     document.getElementById('zh-en').style.fontSize = '45px';
     document.getElementById('en-zh').style.fontSize = '45px';
+    document.getElementById('en-pt').style.fontSize = '45px';
+    document.getElementById('en-pt').style.fontSize = '45px';
     document.getElementById('title').style.width = '50vw';
     
   }
@@ -244,6 +256,8 @@ document.getElementById('language-change').addEventListener('click', function() 
     document.getElementById('model').innerHTML = languages[nowModel][nowlang];
     document.getElementById("zh-en").innerHTML = languages["zh-en"][nowlang];
     document.getElementById("en-zh").innerHTML = languages["en-zh"][nowlang];
+    document.getElementById('zh-pt').innerHTML = languages['zh-pt'][nowlang];
+    document.getElementById('en-pt').innerHTML = languages['en-pt'][nowlang];
 
     link = document.getElementById('UM');
     img = link.querySelector('img');
@@ -341,6 +355,17 @@ function selectMode(mode){
     console.log("reset model",nowModel)
     ws.send('RESET')
     ws.send(nowModel)
+
+    const Hiscontent = document.getElementById('Hiscontent');             //动态更新到页面
+    const Nowcontent = document.getElementById('Nowcontent');
+    const Trancontent = document.getElementById('Trancontent');
+  
+    Trancontent.innerHTML = ""
+    Hiscontent.innerHTML = ""
+    Nowcontent.innerHTML = ""
+  
+    PrevPackate = ""
+
   }
 
 }

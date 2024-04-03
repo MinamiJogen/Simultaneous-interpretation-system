@@ -25,7 +25,9 @@
     </div>
     <div id = "hiddenButton" class = "hiddenButton" style="display: none; position: absolute;">
       <button class="settingButton" id="zh-en" onclick="selectMode('zh-en')">中-英</button>
+      <button class="settingButton" id="zh-pt" onclick="selectMode('zh-pt')">中-葡</button>
       <button class="settingButton" id="en-zh" onclick="selectMode('en-zh')">英-中</button>
+      <button class="settingButton" id="en-pt" onclick="selectMode('en-pt')">英-葡</button>
     </div>
   </div>
   <div class="main-container">
@@ -125,6 +127,6 @@
     <p class="copyright">Copyright © 2024 NLP2CT, University of Macau</p>
 
   </div>
-  <script src="{{ url_for('static', filename='main2.js', _=2) }}"></script>
+  <script src="{{ url_for('static', filename='main2.js', _=3) }}"></script>
 </body>
 </html>
