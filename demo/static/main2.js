@@ -218,6 +218,15 @@ window.onload = function() {
   enc = new TextDecoder("utf-8");//解析arraybuffer
 };
 
+window.addEventListener("beforeunload", (event) => {
+  if(isRecording == 1)
+    setTimeout(function() {
+      ws.send("STOP_RECORDING");                                      // 提醒后端停止录制
+      //ws.send(fileType);
+      console.log("Data sent: ", "STOP_RECORDING");},100);
+});
+
+
 document.getElementById('language-change').addEventListener('click', function() {
     console.log('language change',nowlang);
     nowlang = (nowlang == 'cn')? 'en': 'cn';

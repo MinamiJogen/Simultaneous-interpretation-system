@@ -12,6 +12,9 @@ import time
 import traceback
 from zhconv import convert
 import re
+import random
+import threading
+
 
 import whisper
 from ppasr.predict import PPASRPredictor
@@ -19,7 +22,6 @@ from ppasr.predict import PPASRPredictor
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-
 
 
 app = Flask(__name__)
@@ -31,26 +33,30 @@ DEVICE = 'cpu'
 # DEVICE = 'cuda'
 print(f"Using device:{DEVICE}")
 use_gpu = True if(DEVICE =='cuda') else False
-clockFlag = None                                                    #时钟线程与主线程用于沟通的参数 
+wsID = {}
+clockFlag = {}                                                    #时钟线程与主线程用于沟通的参数 
                                                                         #1：时钟中断主线程 0：主线程完成任务，等待时钟中断 2：时钟停止
 ws_audio_data = {}                                                  #存储不同websocket发送数据的缓存字典
-recogOnUse = False                                                  #True：识别模型对象正在使用
-puncOnUse = False
+# recogENOnUse = False                                                  #True：识别模型对象正在使用
+recogENOnUse = threading.Lock()
+recogZHOnUse = threading.Lock()                                                 #True：识别模型对象正在使用
+puncOnUse = threading.Lock()
+taskOnConduct = {}
 onPosProcess = False                                                #True：正在进行后处理
 threadError = False                                                 #True：线程报错
-mainString = []                                                     #历史识别内容
-nowString = ""                                                      #当前识别内容
-tranString = []
-CutSeconde = 0
-Cutted = False
-RecogMode = 'zh-en'
+mainString = {}                                                     #历史识别内容
+nowString = {}                                                      #当前识别内容
+tranString = {}
+CutSeconde = {}
+Cutted = {}
+RecogMode = {}
 Modes = ["zh-en","en-zh"]
 
 
 THRESHOLD = 1.0
 
 
-count = 0
+count = {}
 
 
 print("加载识别模型...")
@@ -85,49 +91,49 @@ pun_predictor = PunctuationPredictor(model_dir='models\pun_models3', use_gpu=use
 
 
 #异步时钟函数，定时提醒主线程执行翻译任务
-def clock(sec):
+def clock(sec,ws):
     print("clock set")
     global clockFlag
-    global recogOnUse
     global onPosProcess
+    global taskOnConduct
     time.sleep(max(1.5,sec))
     while(True):                                                    #定时检查状态
-        if(clockFlag == 2 or clockFlag == None):                                         #前端停止录制，结束时钟
+        if(clockFlag[ws] == 2 or clockFlag[ws] == None):                                         #前端停止录制，结束时钟
             print("clock end")
             break
-        if(not recogOnUse and not onPosProcess):                    #模型未占用，后处理未启用
+        if(not taskOnConduct[ws] and not onPosProcess):                    #模型未占用，后处理未启用
             print("clock")
-            clockFlag = 1                                           #提醒主线程执行翻译
+            clockFlag[ws] = 1                                           #提醒主线程执行翻译
         
         time.sleep(sec/2)
-        if(clockFlag == 2 or clockFlag == None):                                         #前端停止录制，结束时钟
+        if(clockFlag[ws] == 2 or clockFlag[ws] == None):                                         #前端停止录制，结束时钟
             print("clock end")
             break
         time.sleep(sec/2)
 
-#停止录制后，翻译尚未处理数据的线程
-def pos_clock(ws):
-    global recogOnUse
-    global mainString
-    global nowString
-    global tranString
-
-    while(recogOnUse):
-        continue
+# #停止录制后，翻译尚未处理数据的线程
+# def pos_clock(ws):
+#     global recogOnUse
+#     global mainString
+#     global nowString
+#     global tranString
+#     while(recogOnUse):
+#         continue
    
-    print(f"--------------------Pos_Thread-----------------------")
-    mainString = mainString + "\n"+nowString                                 #更新历史识别内容（历史识别内容 = 历史识别内容 + 当前识别内容）
-    nowString = ""
-    tranString += "\n"+translation(nowString)
-    wsSend(ws)
+#     print(f"--------------------Pos_Thread-----------------------")
+#     mainString = mainString + "\n"+nowString                                 #更新历史识别内容（历史识别内容 = 历史识别内容 + 当前识别内容）
+#     nowString = ""
+#     tranString += "\n"+translation(nowString,ws)
+#     wsSend(ws)
 
-    print(f"------------------------------------------------")
+#     print(f"------------------------------------------------")
     
 #音频处理函数，将二进制数据处理为webm格式
-def save_as_webm(data):
+def save_as_webm(data,ws):
     global count
     global Cutted
     global threadError
+    global wsID
     lenn = len(data)
     try:
         data = b''.join(data)
@@ -138,14 +144,18 @@ def save_as_webm(data):
         # print(f"Data:{data}")
         traceback.print_exc()
         threadError = True
-        for i in range(len(data)):
-            if( i != 0 and type(data[i]) != type(data[i-1])):
-                print(data[i])
+        for i in len(data):
+            if(type(data[i]) != 'bytearray'): 
+                
+                print(f"{i}:({data[i]}) {bytes}")
+        # for i in range(len(data)):
+        #     if( i != 0 and type(data[i]) != type(data[i-1])):
+        #         print(data[i])
 
         raise e
         
 
-    tempfile = "temp{}.wav".format(count)
+    tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
 
     with open(tempfile, 'wb') as f:                                 #将二进制数据按原格式储存为临时文件（webm）
         f.write(data)
@@ -155,13 +165,13 @@ def save_as_webm(data):
     with open(tempfile,"rb") as f:
         print(tempfile)
         audio = AudioSegment.from_file(tempfile)
-        if(Cutted):
+        if(Cutted[ws]):
             part = audio[200:len(audio)]
         else:
             part = audio
     os.remove(tempfile)
     part.export(tempfile)
-    return lenn 
+    return tempfile, lenn 
 
 def CutMedia(ws,second):
 
@@ -173,7 +183,7 @@ def CutMedia(ws,second):
     print(f"cut length:{second}")
     del ws_audio_data[ws][1:second]
     # ws_audio_data[ws].insert(0,head)
-    Cutted = True
+    Cutted[ws] = True
     print("cut finish") 
 
 def punctuation(text):
@@ -259,7 +269,11 @@ def punctuation(text):
 
     
     ### model 2
+    global puncOnUse
+    
+    puncOnUse.acquire()
     result = pun_predictor(text)
+    puncOnUse.release()
     
     pun = {'。', '，', '！', ',','？','?','、'}
     result = [result[i] for i in range(len(result)) if not (result[i] in pun and result[i-1] in pun)]
@@ -267,14 +281,14 @@ def punctuation(text):
     
     return result
 
-def translation(text):
+def translation(text,ws):
     # return ""
     
     
     
     url = "https://umcat.cis.um.edu.mo/api/translate.php"
 
-    if(RecogMode == 'zh-en'):      
+    if(RecogMode[ws] == 'zh-en'):      
         data = {
             'from':"zh-cn",
             'to':'en',
@@ -282,7 +296,7 @@ def translation(text):
 
             'system':"UTI"
         }
-    elif(RecogMode == 'en-zh'):
+    elif(RecogMode[ws] == 'en-zh'):
         data = {
             'from':'en',
             'to':'zh-cn',
@@ -305,7 +319,7 @@ def translation(text):
     print(f"trans time:{t2 - t1}")
     return rr
 
-def recognition(fileList):
+def recognition(fileList,ws):
 
     ### 并行操作
     # # text = model.transcribe(filename, language='Chinese',no_speech_threshold=3,condition_on_previous_text=True)
@@ -325,10 +339,16 @@ def recognition(fileList):
     
 
     # #ppasr
-    if(RecogMode == 'zh-en'):
+    global recogENOnUse
+    global recogZHOnUse
+    if(RecogMode[ws] == 'zh-en'):
+        recogZHOnUse.acquire()
         result = predictor.predict(audio_data=fileList, use_pun=False)['text']
-    elif(RecogMode == 'en-zh'):
+        recogZHOnUse.release()
+    elif(RecogMode[ws] == 'en-zh'):
+        recogENOnUse.acquire()
         result = enmodel.transcribe(fileList)["text"]
+        recogENOnUse.release()
     return result
 
 def audioSlice(filename):
@@ -379,7 +399,7 @@ def audioSlice(filename):
 def wsSend(ws):
     global mainString, nowString, tranString
 
-    packet = {"mainString":mainString, "nowString":nowString, 'tranString':tranString}
+    packet = {"mainString":mainString[ws], "nowString":nowString[ws], 'tranString':tranString[ws]}
     
     js_packet = json.dumps(packet)
     ws.send(js_packet)
@@ -387,7 +407,6 @@ def wsSend(ws):
 #执行翻译任务的线程函数
 def newThread(data,ws,flag):
 
-    global recogOnUse
     global threadError
     global mainString
     global nowString
@@ -396,34 +415,37 @@ def newThread(data,ws,flag):
     global CutSeconde
     global Cutted
     global count
+    global wsID
+    global taskOnConduct
     try:
-        while(recogOnUse):                                              #等待模型可用（逻辑上不需要，以防万一）
+        while(taskOnConduct[ws]):
             continue
-        recogOnUse = True                                               #占用模型
-        print(f"--------------------Thread{count}--------------------")
-        print(f"operate: temp{count}.wav")
+        
+        taskOnConduct[ws] = True
+        print(f"--------------------Thread{wsID[ws]}-{count[ws]}--------------------")
+        print(f"operate: temp{wsID[ws]}{count[ws]}.wav")
 
         T1 = time.time()                                                #开始计时
-        audioLen = save_as_webm(data)                                   #二进制数据转码mp3
+        tempFileName, audioLen = save_as_webm(data,ws)                                   #二进制数据转码mp3
 
 
-        totaled, conbined, singled = audioSlice("temp{}.wav".format(count))
-        os.remove("temp{}.wav".format(count))
+        totaled, conbined, singled = audioSlice(tempFileName)
+        os.remove(tempFileName)
 
 
         if(totaled == -1):    
             print("empty audio") 
             CutMedia(ws,audioLen)       
-            recogOnUse = False  
-            nowString = "" 
+            nowString[ws] = "" 
             wsSend(ws)
+            taskOnConduct[ws] = False
             print(f"---------------ThreadEnd--------------------------")
             return 
         elif(totaled == None):
             print("too short")
-            recogOnUse = False  
-            nowString = "" 
+            nowString[ws] = "" 
             wsSend(ws)
+            taskOnConduct[ws] = False
             print(f"---------------ThreadEnd--------------------------")
             return 
 
@@ -433,8 +455,8 @@ def newThread(data,ws,flag):
             conbinedLen = conbined.duration_seconds
             singledLen = singled.duration_seconds
 
-            conbined.export("conb{}.wav".format(count))
-            singled.export("sing{}.wav".format(count))  
+            conbined.export("conb{}{}.wav".format(wsID[ws],count[ws]))
+            singled.export("sing{}{}.wav".format(wsID[ws],count[ws]))  
 
             #### 并行操作
 
@@ -460,10 +482,10 @@ def newThread(data,ws,flag):
 
             print(f"conb recognition : {conbinedLen}")
             t1 = time.time()
-            conbinedResult = recognition(f"conb{count}.wav")
+            conbinedResult = recognition(f"conb{wsID[ws]}{count[ws]}.wav",ws)
             t2 = time.time()
             print(f"conb recognition time:{t2 - t1}")
-            mainString.append(conbinedResult) 
+            mainString[ws].append(conbinedResult) 
             wsSend(ws)
 
 
@@ -492,18 +514,18 @@ def newThread(data,ws,flag):
             print("task 2:")
             print(f"sing recognition : {singledLen}")
             t1 = time.time()
-            singledResult = recognition(f"sing{count}.wav")
+            singledResult = recognition(f"sing{wsID[ws]}{count[ws]}.wav",ws)
             t2 = time.time()
             print(f"sing recognition time:{t2 - t1}")
-            nowString = singledResult
+            nowString[ws] = singledResult
             wsSend(ws)
             print("---")
             ###
 
-            os.remove("conb{}.wav".format(count))
-            os.remove("sing{}.wav".format(count))
+            os.remove("conb{}{}.wav".format(wsID[ws],count[ws]))
+            os.remove("sing{}{}.wav".format(wsID[ws],count[ws]))
             
-            hh = 0.2 if(Cutted) else 0.0
+            hh = 0.2 if(Cutted[ws]) else 0.0
             audioLen = int ((hh+conbinedLen)/(hh+conbinedLen + singledLen) * audioLen)
             CutMedia(ws,audioLen)
 
@@ -511,11 +533,11 @@ def newThread(data,ws,flag):
             print("One task")
 
             totaledLen = totaled.duration_seconds
-            totaled.export("total{}.wav".format(count))
+            totaled.export("total{}{}.wav".format(wsID[ws],count[ws]))
 
             print(f"total recognition : {totaledLen}")
             t1 = time.time()           
-            totaledResult = recognition(f"total{count}.wav")
+            totaledResult = recognition(f"total{wsID[ws]}{count[ws]}.wav",ws)
             t2 = time.time()
             print(f"total recognition time:{t2 - t1}")
 
@@ -525,9 +547,9 @@ def newThread(data,ws,flag):
             #     nowString = ""
 
 
-            if(totaledResult == nowString and nowString != ""):
+            if(totaledResult == nowString[ws] and nowString[ws] != ""):
                 
-                mainString.append(totaledResult)
+                mainString[ws].append(totaledResult)
                 wsSend(ws)
 
                 PTThread = Thread(target = P_TThread, args = (totaledResult,ws))                 
@@ -553,20 +575,21 @@ def newThread(data,ws,flag):
                 CutMedia(ws,audioLen)
 
             else:
-                nowString = totaledResult
+                nowString[ws] = totaledResult
                 wsSend(ws)
-            os.remove("total{}.wav".format(count))
+            os.remove("total{}{}.wav".format(wsID[ws],count[ws]))
 
         T2 = time.time()
         print("Process time:{}".format(T2-T1))
-        count+=1
-
+        
+        count[ws]+=1
+        taskOnConduct[ws] = False
         # print(f"main:{mainString}")
         # print(f"now:{nowString}")
         # print(f"trans:{tranString}")
         print(f"---------------ThreadEnd--------------------------")
 
-        recogOnUse = False                                              #解锁模型
+
         
     except Exception as e:
         traceback.print_exc()
@@ -575,7 +598,7 @@ def newThread(data,ws,flag):
 
 def P_TThread(text,ws):
     global nowString, mainString, tranString
-    global puncOnUse 
+
 
     def find_from_end(lst, target):
         # 从后向前查找元素，返回位置
@@ -583,64 +606,56 @@ def P_TThread(text,ws):
             if lst[i] == target:
                 return i
         return -1
-    if(RecogMode == "zh-en"):
-        while(puncOnUse):
-            continue
+    if(RecogMode[ws] == "zh-en"):
+        # while(puncOnUse):
+        #     continue
 
-        puncOnUse = True
         textPunc = punctuation(text)
-        puncOnUse = False
-
 
         # 找到最后一个子字符串的位置
-        last_occurrence_position = find_from_end(mainString,text)
+        last_occurrence_position = find_from_end(mainString[ws],text)
 
 
 
         # 如果找到了子字符串
         if last_occurrence_position != -1:
             # 替换最后一个子字符串
-            mainString[last_occurrence_position] = textPunc
+            mainString[ws][last_occurrence_position] = textPunc
         else:
-            mainString.append(textPunc)
+            mainString[ws].append(textPunc)
         wsSend(ws)
 
-        textTrans = translation(textPunc)
-        tranString.append(textTrans)
+        textTrans = translation(textPunc,ws)
+        tranString[ws].append(textTrans)
         wsSend(ws)
-    elif(RecogMode == 'en-zh'):
-        textTrans = translation(text)
-        tranString.append(textTrans)
+    elif(RecogMode[ws] == 'en-zh'):
+        textTrans = translation(text,ws)
+        tranString[ws].append(textTrans)
         wsSend(ws)
         
-        while(puncOnUse):
-            continue
 
-        puncOnUse = True
         textTranPunc = punctuation(textTrans)
-        puncOnUse = False
 
 
         # 找到最后一个子字符串的位置
-        last_occurrence_position = find_from_end(tranString,textTrans)
+        last_occurrence_position = find_from_end(tranString[ws],textTrans)
 
 
 
         # 如果找到了子字符串
         if last_occurrence_position != -1:
             # 替换最后一个子字符串
-            tranString[last_occurrence_position] = textTranPunc
+            tranString[ws][last_occurrence_position] = textTranPunc
         else:
-            tranString.append(textTranPunc)
+            tranString[ws].append(textTranPunc)
         wsSend(ws)       
-        
+      
 
 #websocket端口函数
 @sockets.route('/echo')
 def echo_socket(ws):                                                
     global ws_audio_data
     global clockFlag
-    global recogOnUse
     global mainString
     global nowString
     global tranString
@@ -649,15 +664,20 @@ def echo_socket(ws):
     global count
     global Cutted
     global RecogMode
+    global wsID
+    global taskOnConduct
     print("ws set")
-
-    if(recogOnUse):
-        while(recogOnUse):
-            continue
-
-
-    init()
-    ws_audio_data[ws] = []                                          #存储websocket传入的二进制数据的缓存数组
+    
+    init(ws)
+    print(ws)
+    
+    random_number = random.randint(0, 1000)
+    while(random_number in wsID.values()):
+        random_number = random.randint(0, 1000)
+    
+    wsID[ws] = random_number
+    
+                                              #存储websocket传入的二进制数据的缓存数组
 
     while not ws.closed:                                            #死循环
         if(threadError):                                                #若某一线程报错，中断服务器
@@ -669,45 +689,45 @@ def echo_socket(ws):
         if(audio_data == "START_RECORDING"):                            #1. 前端提醒音频开始传输
             print("start recording")
 
-            clockFlag = 0                                                       #提醒时钟线程主线程就绪
+            clockFlag[ws] = 0                                                       #提醒时钟线程主线程就绪
 
-            head = ws.receive()
+            # head = ws.receive()
             # print(f"head type{type(head)}")
-            ws_audio_data[ws].append(head)
+            # ws_audio_data[ws].append(head)
 
-            timer = Thread(target = clock, args = (0.5,))                 
+            timer = Thread(target = clock, args = (0.5,ws))                 
             timer.daemon = True                                    
             timer.start()       
                                                             #启动时钟线程
         elif(audio_data == "STOP_RECORDING"):                           #3. 前端提醒音频停止传输    
             print("stop")
-            clockFlag = 2                                                       #提醒时钟关闭
+            clockFlag[ws] = 2                                                       #提醒时钟关闭
             # posProcess = Thread(target=pos_clock,args=(ws))
             # posProcess.daemon = True
             # posProcess.start()                                                  #开启后处理线程，处理尚未处理的数据
 
             del ws_audio_data[ws]                                               #清空缓存数组
             ws_audio_data[ws] = []
-            Cutted = False
+            Cutted[ws] = False
 
         elif(audio_data == "RESET"):                                    #4. 前端提醒清除目前记录
             print("reset")
             del ws_audio_data[ws]                                               #清空缓存数组
             ws_audio_data[ws] = []
-            mainString = []                                                     #清空历史识别内容 
-            nowString = ""  
-            tranString = []
+            mainString[ws] = []                                                     #清空历史识别内容 
+            nowString[ws] = ""  
+            tranString[ws] = []
 
         elif(audio_data in Modes):
-            if(clockFlag != 2):
+            if(clockFlag[ws] != 2):
                 continue
             print(f"model change:{audio_data}")
-            RecogMode = audio_data            
+            RecogMode[ws] = audio_data            
             
-        elif(clockFlag == 1):                                           #2. 时钟线程提醒主线程执行翻译
+        elif(clockFlag[ws] == 1):                                           #2. 时钟线程提醒主线程执行翻译
             ws_audio_data[ws].append(audio_data)
             print("detect clock")                                       
-            clockFlag = 0
+            clockFlag[ws] = 0
             if(len(ws_audio_data[ws]) >= 100):
                 process_data = ws_audio_data[ws][0:99]
                 print("DATA TOO LONG. PROCESS FIRST 100 DATA")
@@ -724,33 +744,81 @@ def echo_socket(ws):
             ws_audio_data[ws].append(audio_data)                                #将sockets数据存入缓存数组中
 
     print("ws closed") 
+    dele(ws)
 
-def init():
+def init(ws):
     global ws_audio_data
     global clockFlag
-    global recogOnUse
     global mainString
     global nowString
     global CutSeconde
     global head
     global count
     global Cutted
-    global recogOnUse
     global onPosProcess
     global threadError
     global tranString
+    global RecogMode
+    global taskOnConduct
+    
+    taskOnConduct[ws] = False
+    ws_audio_data[ws] = []                                        
+    Cutted[ws] = False
+    mainString[ws] = []
+    nowString[ws] = ""
+    tranString[ws] = []
+    clockFlag[ws] = 2
+    count[ws] = 0
+    RecogMode[ws] = "zh-en"
+    
 
-    ws_audio_data = {}                                         
-    Cutted = False
-    mainString = []
-    nowString = ""
-    tranString = []
-    clockFlag = 2
-    recogOnUse = False
-    recogOnUse = False                                                  #True：模型对象正在使用
-    onPosProcess = False                                                #True：正在进行后处理
-    threadError = False                                                 #True：线程报错
-    count = 0
+def dele(ws):
+    global ws_audio_data
+    global clockFlag
+    global mainString
+    global nowString
+    global CutSeconde
+    global head
+    global count
+    global Cutted
+    global onPosProcess
+    global threadError
+    global tranString
+    global RecogMode
+    global taskOnConduct
+    if ws in ws_audio_data.keys():
+        del ws_audio_data[ws]
+    if ws in Cutted.keys():                                        
+        del Cutted[ws]
+    if ws in mainString.keys():
+        del mainString[ws]
+    if ws in nowString.keys(): 
+        del nowString[ws] 
+    if ws in tranString.keys():
+        del tranString[ws]
+    if ws in clockFlag.keys():
+        del clockFlag[ws]
+    if ws in count.keys():
+        del count[ws]
+    if ws in RecogMode.keys():
+        del RecogMode[ws]
+    if ws in taskOnConduct.keys():
+        del taskOnConduct[ws]
+
+def delete_wav_files():
+    current_directory = os.getcwd()  # 获取当前目录
+    """
+    删除指定目录中的所有 '.wav' 文件。
+    :param folder_path: 目标文件夹的路径
+    """
+    if not os.path.isdir(current_directory):
+        print(f"错误：{current_directory} 不是一个目录")
+        return
+
+    for file in os.listdir(current_directory):
+        if file.lower().endswith(".wav"):
+            file_path = os.path.join(current_directory, file)
+            os.remove(file_path)
 
 @app.route('/')
 def hello_world():
@@ -765,6 +833,7 @@ def hello_world():
 #         os.remove("temp.webm")
 #     return ""
 
+delete_wav_files()
 
 if __name__ == '__main__':
     # recognition("test.wav")
