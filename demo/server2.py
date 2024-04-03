@@ -65,7 +65,7 @@ predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use
 # model = whisper.load_model('tiny', device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
-enmodel = whisper.load_model('small.en', device=DEVICE)
+enmodel = whisper.load_model('tiny.en', device=DEVICE)
 head = ""
 
 
