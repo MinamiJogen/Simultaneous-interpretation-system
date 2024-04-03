@@ -133,11 +133,11 @@ window.onload = function() {
   document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
 
   try{
-    ws = new WebSocket("wespeak.today:8080");               //建立socket
+    ws = new WebSocket("wss://wespeak.today:8080/echo");               //建立socket
     console.log('socket set',ws);
   }catch (err){
     window.alert("Web socket cannot connect!!!" + err.message);
-    Running = False;
+    Running = false;
   }
   
   ws.addEventListener("close", (event) =>{
