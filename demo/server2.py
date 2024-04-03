@@ -357,7 +357,7 @@ def recognition(fileList,ws):
         recogZHOnUse.acquire()
         result = predictor.predict(audio_data=fileList, use_pun=False)['text']
         recogZHOnUse.release()
-    elif(RecogMode[ws] == 'en-zh' or RecogMode =='en-pt'):
+    elif(RecogMode[ws] == 'en-zh' or RecogMode[ws] =='en-pt'):
         recogENOnUse.acquire()
         result = enmodel.transcribe(fileList)["text"]
         recogENOnUse.release()
