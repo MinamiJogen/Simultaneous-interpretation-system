@@ -278,7 +278,9 @@ def punctuation(text):
     pun = {'。', '，', '！', ',','？','?','、'}
     result = [result[i] for i in range(len(result)) if not (result[i] in pun and result[i-1] in pun)]
     result = ''.join(result)
-    
+    result = result.replace('？','')
+    if(result[-1] != '。'): 
+        result = result + '。'
     return result
 
 def translation(text,ws):
@@ -604,8 +606,9 @@ def newThread(data,ws,flag):
 
         
     except Exception as e:
-        traceback.print_exc()
-        threadError = True
+        # traceback.print_exc()
+        # threadError = True
+        return
 
 
 def P_TThread(text,ws):
@@ -618,52 +621,54 @@ def P_TThread(text,ws):
             if lst[i] == target:
                 return i
         return -1
-    if(RecogMode[ws] == "zh-en" or RecogMode[ws] == "zh-pt"):
-        # while(puncOnUse):
-        #     continue
+    try:
+        if(RecogMode[ws] == "zh-en" or RecogMode[ws] == "zh-pt"):
+            # while(puncOnUse):
+            #     continue
 
-        textPunc = punctuation(text)
+            textPunc = punctuation(text)
 
-        # 找到最后一个子字符串的位置
-        last_occurrence_position = find_from_end(mainString[ws],text)
-
-
-
-        # 如果找到了子字符串
-        if last_occurrence_position != -1:
-            # 替换最后一个子字符串
-            mainString[ws][last_occurrence_position] = textPunc
-        else:
-            mainString[ws].append(textPunc)
-        wsSend(ws)
-
-        textTrans = translation(textPunc,ws)
-        tranString[ws].append(textTrans)
-        wsSend(ws)
-    elif(RecogMode[ws] == 'en-zh'):
-        textTrans = translation(text,ws)
-        tranString[ws].append(textTrans)
-        wsSend(ws)
-        
-
-        textTranPunc = punctuation(textTrans)
+            # 找到最后一个子字符串的位置
+            last_occurrence_position = find_from_end(mainString[ws],text)
 
 
-        # 找到最后一个子字符串的位置
-        last_occurrence_position = find_from_end(tranString[ws],textTrans)
 
-        # 如果找到了子字符串
-        if last_occurrence_position != -1:
-            # 替换最后一个子字符串
-            tranString[ws][last_occurrence_position] = textTranPunc
-        else:
-            tranString[ws].append(textTranPunc)
-        wsSend(ws)      
-    elif(RecogMode[ws] == "en-pt"):
-        textTrans = translation(text,ws)
-        tranString[ws].append(textTrans)
-        wsSend(ws)
-        
+            # 如果找到了子字符串
+            if last_occurrence_position != -1:
+                # 替换最后一个子字符串
+                mainString[ws][last_occurrence_position] = textPunc
+            else:
+                mainString[ws].append(textPunc)
+            wsSend(ws)
+
+            textTrans = translation(textPunc,ws)
+            tranString[ws].append(textTrans)
+            wsSend(ws)
+        elif(RecogMode[ws] == 'en-zh'):
+            textTrans = translation(text,ws)
+            tranString[ws].append(textTrans)
+            wsSend(ws)
+            
+
+            textTranPunc = punctuation(textTrans)
+
+
+            # 找到最后一个子字符串的位置
+            last_occurrence_position = find_from_end(tranString[ws],textTrans)
+
+            # 如果找到了子字符串
+            if last_occurrence_position != -1:
+                # 替换最后一个子字符串
+                tranString[ws][last_occurrence_position] = textTranPunc
+            else:
+                tranString[ws].append(textTranPunc)
+            wsSend(ws)      
+        elif(RecogMode[ws] == "en-pt"):
+            textTrans = translation(text,ws)
+            tranString[ws].append(textTrans)
+            wsSend(ws)
+    except:
+        return
       
 
 #websocket端口函数
@@ -838,7 +843,9 @@ def delete_wav_files():
 @app.route('/')
 def hello_world():
     return render_template("index.html")
-
+@app.route("/single")
+def return_single():
+    return render_template("indexSingle.html")
 
 # @app.errorhandler(Exception)
 # def handle_exception(e):                                           #处理服务器异常函数，删除所有临时数据

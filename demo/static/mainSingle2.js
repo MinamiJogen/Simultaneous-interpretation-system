@@ -122,15 +122,15 @@ window.onload = function() {
   }
   document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
   document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
-  document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
+  // document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
   document.getElementById('recog content').style.fontSize = normalFont[nowfont];
-  document.getElementById('trans content').style.fontSize = normalFont[nowfont];
+  // document.getElementById('trans content').style.fontSize = normalFont[nowfont];
   document.getElementById('start').style.fontSize = buttonFont[nowfont];
   document.getElementById('clean').style.fontSize = buttonFont[nowfont];
   document.getElementById('download').style.fontSize = buttonFont[nowfont];
 
   document.getElementById('Hiscontent').style.whiteSpace = 'pre-wrap';
-  document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
+  // document.getElementById('Trancontent').style.whiteSpace = 'pre-wrap';
 
   try{
     ws = new WebSocket("ws://localhost:8000/echo");               //建立socket
@@ -168,14 +168,13 @@ window.onload = function() {
     
     rcheck = checkOnBottom('recognition')
     const Hiscontent = document.getElementById('Hiscontent'); 
-    Hiscontent.innerHTML = splicing(receivedData.mainString);
+    Hiscontent.innerHTML = splicing(receivedData.mainString, receivedData.tranString);
     if(rcheck){
       let div = document.getElementById('recognition-scroll');
       div.scrollTop = div.scrollHeight;
     }
 
     const Nowcontent = document.getElementById('Nowcontent');
-    const Trancontent = document.getElementById('Trancontent');
 
     
 
@@ -185,19 +184,8 @@ window.onload = function() {
 
     if(PrevPackate == ""){
       let speed = 500.0 / receivedData.nowString.length
-      typeWriter('Nowcontent','recognition-scroll', receivedData.nowString,speed)
-      speed = 1000.0 / splicing(receivedData.tranString).length
-      typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString),speed)
-
+      setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString,speed),0);
     }else{
-      
-      if(receivedData.tranString !== "" && receivedData.tranString.length != PrevPackate.tranString.length){
-        TranCommon = getCommonPrefix(splicing(PrevPackate.tranString), splicing(receivedData.tranString))
-        Trancontent.innerHTML = splicing(receivedData.tranString).substring(0,TranCommon);
-        let speed = 1000.0 / splicing(receivedData.tranString).substring(TranCommon).length
-        setTimeout(typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString).substring(TranCommon),speed),0)
-      }
-      
       if(receivedData.nowString !== ""){
         NowCommon = getCommonPrefix(PrevPackate.nowString, receivedData.nowString)
         Nowcontent.innerHTML = receivedData.nowString.substring(0,NowCommon); 
@@ -220,9 +208,9 @@ window.onload = function() {
 
   const Hiscontent = document.getElementById('Hiscontent');             //动态更新到页面
   const Nowcontent = document.getElementById('Nowcontent');
-  const Trancontent = document.getElementById('Trancontent');
+  // const Trancontent = document.getElementById('Trancontent');
 
-  Trancontent.innerHTML = "";
+  // Trancontent.innerHTML = "";
   Hiscontent.innerHTML = "";
   Nowcontent.innerHTML = "";  
 
@@ -235,7 +223,7 @@ window.addEventListener("beforeunload", (event) => {
     setTimeout(function() {
       ws.send("STOP_RECORDING");                                      // 提醒后端停止录制
       //ws.send(fileType);
-      console.log("Data sent: ", "STOP_RECORDING");},100);
+      console.log("Data sent: ", "STOP_RECORDING");},0);
 });
 
 
@@ -244,7 +232,7 @@ document.getElementById('language-change').addEventListener('click', function() 
     nowlang = (nowlang == 'cn')? 'en': 'cn';
 
     document.getElementById('recog content').innerHTML = languages['recog content'][nowlang];
-    document.getElementById('trans content').innerHTML = languages['trans content'][nowlang];
+    // document.getElementById('trans content').innerHTML = languages['trans content'][nowlang];
     document.getElementById('contact us').innerHTML = languages['contact us'][nowlang];
     document.getElementById('related links').innerHTML = languages['related links'][nowlang];
     document.getElementById('recog content').innerHTML = languages['recog content'][nowlang];
@@ -279,7 +267,7 @@ document.getElementById('font-size').addEventListener('click', function(){
 
     document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
     document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
-    document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
+    // document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
     document.getElementById('recog content').style.fontSize = normalFont[nowfont];
     document.getElementById('trans content').style.fontSize = normalFont[nowfont];
     document.getElementById('start').style.fontSize = buttonFont[nowfont];
@@ -297,9 +285,9 @@ document.getElementById('clean').addEventListener('click', function() {
                                               //清空本地储存的数据
   const Hiscontent = document.getElementById('Hiscontent');             //动态更新到页面
   const Nowcontent = document.getElementById('Nowcontent');
-  const Trancontent = document.getElementById('Trancontent');
+  // const Trancontent = document.getElementById('Trancontent');
 
-  Trancontent.innerHTML = ""
+  // Trancontent.innerHTML = ""
   Hiscontent.innerHTML = ""
   Nowcontent.innerHTML = ""
 
@@ -523,13 +511,23 @@ function typeWriter(id,divid,txt,speed) {
 
 }
 
-function splicing(lst){
+/**将字符串列表组合成一个字符串 */ 
+function splicing(lst1,lst2){
   let str = "";
-  if(lst.length > 0)
-    str = lst[0];
 
-  for(i=1;i<lst.length;i++){
-    str += "\n"+lst[i];
+  let maxLen = Math.max(lst1.length,lst2.length);
+
+  for(i=0;i<maxLen;i++){
+    if(i != 0){
+      str += "\n";
+    }
+    if(i < lst1.length){
+      str += lst1[i];
+    }
+    if( i < lst2.length){
+      str += "\n" + lst2[i];
+    }
+    
   }
 
   return str
