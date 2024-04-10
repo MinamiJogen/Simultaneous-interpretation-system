@@ -105,19 +105,19 @@ window.onload = function() {
   if(isMobileDevice()){
     document.body.style.fontSize = '2.5em';
 
-    textFont = ['35px','40px','50px'];
-    normalFont = ['35px','40px','50px'];
-    buttonFont = ['35px','40px','50px'];
+    textFont = ['35pt','40pt','50pt'];
+    normalFont = ['35pt','40pt','50pt'];
+    buttonFont = ['35pt','40pt','50pt'];
     // 设置字体大小为20px
     
 
-    document.getElementById('language-change').style.fontSize = '45px';
-    document.getElementById('font-size').style.fontSize = '45px';
-    document.getElementById('model').style.fontSize = '45px';
-    document.getElementById('zh-en').style.fontSize = '45px';
-    document.getElementById('en-zh').style.fontSize = '45px';
-    document.getElementById('en-pt').style.fontSize = '45px';
-    document.getElementById('en-pt').style.fontSize = '45px';
+    // document.getElementById('language-change').style.fontSize = '45px';
+    // document.getElementById('font-size').style.fontSize = '45px';
+    document.getElementById('model').style.fontSize = '45pt';
+    document.getElementById('zh-en').style.fontSize = '45pt';
+    document.getElementById('en-zh').style.fontSize = '45pt';
+    document.getElementById('en-pt').style.fontSize = '45pt';
+    document.getElementById('en-pt').style.fontSize = '45pt';
     document.getElementById('title').style.width = '50vw';
     
   }
