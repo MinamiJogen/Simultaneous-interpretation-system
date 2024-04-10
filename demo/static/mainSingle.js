@@ -119,7 +119,7 @@ window.onload = function() {
       document.getElementById('zh-en').style.fontSize = mobileSize;
       document.getElementById('en-zh').style.fontSize = mobileSize;
       document.getElementById('en-pt').style.fontSize = mobileSize;
-      document.getElementById('en-pt').style.fontSize = mobileSize;
+      document.getElementById('zh-pt').style.fontSize = mobileSize;
       document.getElementById('title').style.width = '50vw';
       document.getElementsByClassName('container')[0].style.marginTop = '10pt';
       

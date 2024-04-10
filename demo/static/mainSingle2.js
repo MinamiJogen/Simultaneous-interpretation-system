@@ -105,7 +105,7 @@ window.onload = function() {
     if(isMobileDevice()){
       let mobileSize = '30pt';  
       document.body.style.fontSize = '2.5em';
-      
+
       textFont = ['28pt','30pt','35pt'];
       normalFont = ['28pt','30pt','35pt'];
       buttonFont = ['28pt','30pt','35pt'];
@@ -117,7 +117,7 @@ window.onload = function() {
       document.getElementById('zh-en').style.fontSize = mobileSize;
       document.getElementById('en-zh').style.fontSize = mobileSize;
       document.getElementById('en-pt').style.fontSize = mobileSize;
-      document.getElementById('en-pt').style.fontSize = mobileSize;
+      document.getElementById('zh-pt').style.fontSize = mobileSize;
       document.getElementById('title').style.width = '50vw';
       document.getElementsByClassName('container')[0].style.marginTop = '10pt';
     }
