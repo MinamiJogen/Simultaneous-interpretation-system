@@ -107,9 +107,9 @@ window.onload = function() {
       let mobileSize = '30pt';
       document.body.style.fontSize = '2.5em';
   
-      textFont = ['35pt','40pt','50pt'];
-      normalFont = ['35pt','40pt','50pt'];
-      buttonFont = ['35pt','40pt','50pt'];
+      textFont = ['28pt','30pt','35pt'];
+      normalFont = ['28pt','30pt','35pt'];
+      buttonFont = ['28pt','30pt','35pt'];
       // 设置字体大小为20px
       
       document.getElementById('icon1').style.height = mobileSize;

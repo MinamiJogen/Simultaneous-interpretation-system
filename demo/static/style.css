@@ -238,6 +238,16 @@
     /* padding: 0px 3%; */
     margin-right: 5%;
   }
+
+  .normal-text{
+  padding-left: 10px;
+	max-height: 20%;
+	height: 40px;
+	margin: 0;
+  
+	display: flex;
+	align-items: center;
+  }
   
   .scrollable-div {
     /* border: 1px solid black; */
@@ -288,16 +298,6 @@
     position: absolute;
     bottom: 0;
     width: 80%;
-  }
-
-  .normal-text{
-    padding-left: 3vh;
-	max-height: 20%;
-	height: 40px;
-	margin: 0;
-  
-	display: flex;
-	align-items: center;
   }
 
   .bottomImage{
