@@ -114,11 +114,13 @@ window.onload = function() {
       
       document.getElementById('icon1').style.height = mobileSize;
       document.getElementById('icon2').style.height = mobileSize;
+
       document.getElementById('model').style.fontSize = mobileSize;
       document.getElementById('zh-en').style.fontSize = mobileSize;
       document.getElementById('en-zh').style.fontSize = mobileSize;
       document.getElementById('en-pt').style.fontSize = mobileSize;
       document.getElementById('en-pt').style.fontSize = mobileSize;
+      
       document.getElementById('title').style.width = '50vw';
       
     }
