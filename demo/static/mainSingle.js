@@ -91,6 +91,7 @@ var languages={
 
 }
 
+
 var nowfont = 0;
 var buttonFont = ['13pt','20pt','25pt'];
 var textFont = ['14pt','16pt','18pt'];
@@ -101,25 +102,25 @@ var normalFont = ['14pt','16pt','18pt'];
 /**页面初始化 */
 window.onload = function() {
 
-  // if(isMobileDevice()){
-  //   document.body.style.fontSize = '2.5em';
+  if(isMobileDevice()){
+    document.body.style.fontSize = '2.5em';
 
-  //   textFont = ['35px','40px','50px'];
-  //   normalFont = ['35px','40px','50px'];
-  //   buttonFont = ['35px','40px','50px'];
-  //   // 设置字体大小为20px
+    textFont = ['35px','40px','50px'];
+    normalFont = ['35px','40px','50px'];
+    buttonFont = ['35px','40px','50px'];
+    // 设置字体大小为20px
     
 
-  //   document.getElementById('language-change').style.fontSize = '45px';
-  //   document.getElementById('font-size').style.fontSize = '45px';
-  //   document.getElementById('model').style.fontSize = '45px';
-  //   document.getElementById('zh-en').style.fontSize = '45px';
-  //   document.getElementById('en-zh').style.fontSize = '45px';
-  //   document.getElementById('en-pt').style.fontSize = '45px';
-  //   document.getElementById('en-pt').style.fontSize = '45px';
-  //   document.getElementById('title').style.width = '50vw';
+    document.getElementById('language-change').style.fontSize = '45px';
+    document.getElementById('font-size').style.fontSize = '45px';
+    document.getElementById('model').style.fontSize = '45px';
+    document.getElementById('zh-en').style.fontSize = '45px';
+    document.getElementById('en-zh').style.fontSize = '45px';
+    document.getElementById('en-pt').style.fontSize = '45px';
+    document.getElementById('en-pt').style.fontSize = '45px';
+    document.getElementById('title').style.width = '50vw';
     
-  // }
+  }
   document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
   document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
   // document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
