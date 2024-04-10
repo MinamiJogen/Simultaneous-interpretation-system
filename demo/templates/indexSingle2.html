@@ -19,8 +19,12 @@
     <img src="{{url_for('static', filename='image/title.svg')}}" style="min-height: 20pt; height: 65%">
     <div class="setting-container">
       <button class="settingButton" id="model">中-英</button>
-      <button class="settingButton" id="language-change">中</button>
-      <button class="settingButton" id="font-size">字</button>
+      <button class="settingButton" id="language-change">
+        <img class = "icon" src="{{url_for('static',filename='image/language.png')}}"></img>
+      </button>
+      <button class="settingButton" id="font-size">
+        <img class="icon" src="{{url_for('static',filename='image/fontSize.png')}}"></img>
+      </button>
     </div>
     <div id = "hiddenButton" class = "hiddenButton" style="display: none; position: absolute;">
       <button class="settingButton" id="zh-en" onclick="selectMode('zh-en')">中-英</button>
@@ -115,6 +119,6 @@
     <p class="copyright">Copyright © 2024 NLP2CT, University of Macau</p>
 
   </div>
-  <script src="{{ url_for('static', filename='mainSingle2.js', _=3) }}"></script>
+  <script src="{{ url_for('static', filename='mainSingle2.js', _=4) }}"></script>
 </body>
 </html>
