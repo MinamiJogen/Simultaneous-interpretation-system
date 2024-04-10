@@ -113,9 +113,6 @@ window.onload = function() {
     buttonFont = ['35pt','40pt','50pt'];
     // 设置字体大小为20px
     
-
-    // document.getElementById('language-change').style.fontSize = '45px';
-    // document.getElementById('font-size').style.fontSize = '45px';
     document.getElementById('icon1').style.height = mobileSize;
     document.getElementById('icon2').style.height = mobileSize;
     document.getElementById('model').style.fontSize = mobileSize;

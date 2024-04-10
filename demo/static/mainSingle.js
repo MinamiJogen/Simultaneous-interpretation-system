@@ -102,31 +102,29 @@ var normalFont = ['14pt','16pt','18pt'];
 /**页面初始化 */
 window.onload = function() {
 
-  if(isMobileDevice()){
-    let mobileSize = '30pt';
-
-
-
-    document.body.style.fontSize = '2.5em';
-
-    textFont = ['35pt','40pt','50pt'];
-    normalFont = ['35pt','40pt','50pt'];
-    buttonFont = ['35pt','40pt','50pt'];
-    // 设置字体大小为20px
-    
-
-    // document.getElementById('language-change').style.fontSize = '45px';
-    // document.getElementById('font-size').style.fontSize = '45px';
-    document.getElementById('icon1').style.height = mobileSize;
-    document.getElementById('icon2').style.height = mobileSize;
-    document.getElementById('model').style.fontSize = mobileSize;
-    document.getElementById('zh-en').style.fontSize = mobileSize;
-    document.getElementById('en-zh').style.fontSize = mobileSize;
-    document.getElementById('en-pt').style.fontSize = mobileSize;
-    document.getElementById('en-pt').style.fontSize = mobileSize;
-    document.getElementById('title').style.width = '50vw';
-    
+  try{
+    if(isMobileDevice()){
+      let mobileSize = '30pt';
+      document.body.style.fontSize = '2.5em';
+  
+      textFont = ['35pt','40pt','50pt'];
+      normalFont = ['35pt','40pt','50pt'];
+      buttonFont = ['35pt','40pt','50pt'];
+      // 设置字体大小为20px
+      
+      document.getElementById('icon1').style.height = mobileSize;
+      document.getElementById('icon2').style.height = mobileSize;
+      document.getElementById('model').style.fontSize = mobileSize;
+      document.getElementById('zh-en').style.fontSize = mobileSize;
+      document.getElementById('en-zh').style.fontSize = mobileSize;
+      document.getElementById('en-pt').style.fontSize = mobileSize;
+      document.getElementById('en-pt').style.fontSize = mobileSize;
+      document.getElementById('title').style.width = '50vw';
+      
+    }
+  }catch{
   }
+
   document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
   document.getElementById('Nowcontent').style.fontSize = textFont[nowfont];
   // document.getElementById('Trancontent').style.fontSize = textFont[nowfont];
