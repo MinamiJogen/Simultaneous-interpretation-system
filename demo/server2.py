@@ -842,10 +842,12 @@ def delete_wav_files():
 
 @app.route('/')
 def hello_world():
-    return render_template("index2.html")
+    random_number = random.randint(1, 100)
+    return render_template("index.html",number=random_number)
 @app.route("/single")
 def return_single():
-    return render_template("indexSingle2.html")
+    random_number = random.randint(1, 100)
+    return render_template("indexSingle.html",number=random_number)
 
 # @app.errorhandler(Exception)
 # def handle_exception(e):                                           #处理服务器异常函数，删除所有临时数据
