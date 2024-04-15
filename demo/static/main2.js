@@ -119,7 +119,7 @@ window.onload = function() {
     document.getElementById('zh-en').style.fontSize = mobileSize;
     document.getElementById('en-zh').style.fontSize = mobileSize;
     document.getElementById('en-pt').style.fontSize = mobileSize;
-    document.getElementById('en-pt').style.fontSize = mobileSize;
+    document.getElementById('zh-pt').style.fontSize = mobileSize;
     document.getElementById('title').style.width = '50vw';
     document.getElementsByClassName('container')[0].style.marginTop = '10pt';
     
@@ -313,9 +313,9 @@ document.getElementById('clean').addEventListener('click', function() {
 });
 
 document.getElementById('model').addEventListener('click', function() {
-  var x = document.getElementById("hiddenButton");
-  var fa = document.getElementById("model");
-  var rect = fa.getBoundingClientRect();
+  let x = document.getElementById("hiddenButton");
+  let fa = document.getElementById("model");
+  let rect = fa.getBoundingClientRect();
 
   x.style.top = rect.bottom +"px";
   x.style.width = rect.width + "px";
@@ -332,6 +332,7 @@ document.getElementById('model').addEventListener('click', function() {
       // console.log("hide",buttons[i]);
     }else{
       buttons[i].style.display = "block";
+      buttons[i].style.width = rect.width + "px";
       // console.log("show",buttons[i]);
     }
   }

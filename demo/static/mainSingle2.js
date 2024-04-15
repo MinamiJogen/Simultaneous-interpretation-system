@@ -319,6 +319,8 @@ document.getElementById('model').addEventListener('click', function() {
       // console.log("hide",buttons[i]);
     }else{
       buttons[i].style.display = "block";
+      buttons[i].style.width = rect.width + "px";
+      
       // console.log("show",buttons[i]);
     }
   }
