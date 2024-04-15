@@ -61,7 +61,7 @@ count = {}
 
 print("加载识别模型...")
 ####识别模型
-predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= use_gpu,decoder='ctc_greedy')
+predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= use_gpu)
 # model = whisper.load_model('tiny', device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
