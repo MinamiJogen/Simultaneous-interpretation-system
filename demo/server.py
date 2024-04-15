@@ -127,51 +127,6 @@ def clock(sec,ws):
 #     wsSend(ws)
 
 #     print(f"------------------------------------------------")
-    
-#音频处理函数，将二进制数据处理为webm格式
-# def save_as_webm(data,ws):
-#     global count
-#     global Cutted
-#     global threadError
-#     global wsID
-#     lenn = len(data)
-#     try:
-#         data = b''.join(data)
-#     except Exception as e:
-
-#         print(f"Data type:{type(data)}")
-#         print(f"Data len:{len(data)}")
-#         # print(f"Data:{data}")
-#         traceback.print_exc()
-#         threadError = True
-#         for i in len(data):
-#             if(type(data[i]) != 'bytearray'): 
-                
-#                 print(f"{i}:({data[i]}) {bytes}")
-#         # for i in range(len(data)):
-#         #     if( i != 0 and type(data[i]) != type(data[i-1])):
-#         #         print(data[i])
-
-#         raise e
-        
-
-#     tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
-
-#     with open(tempfile, 'wb') as f:                                 #将二进制数据按原格式储存为临时文件（webm）
-#         f.write(data)
-#         f.close()
-    
-#     part = ""
-#     with open(tempfile,"rb") as f:
-#         print(tempfile)
-#         audio = AudioSegment.from_file(tempfile)
-#         if(Cutted[ws]):
-#             part = audio[200:len(audio)]
-#         else:
-#             part = audio
-#     os.remove(tempfile)
-#     part.export(tempfile)
-#     return tempfile, lenn 
 
 def save_as_webm(data, ws):
     global count
@@ -201,12 +156,12 @@ def save_as_webm(data, ws):
     else:
         part = audio
 
-    tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
+    # tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
 
-    # Export the audio segment directly to the file
-    part.export(tempfile, format="wav")
+    # # Export the audio segment directly to the file
+    # part.export(tempfile, format="wav")
 
-    return tempfile, lenn
+    return part, lenn
 
 
 def CutMedia(ws,second):
@@ -398,10 +353,10 @@ def recognition(fileList,ws):
         recogENOnUse.release()
     return result
 
-def audioSlice(filename):
+def audioSlice(audio):
 
-    # 读取音频文件
-    audio = AudioSegment.from_file(filename)
+    # # 读取音频文件
+    # audio = AudioSegment.from_file(filename)
 
     # 设置分割参数
     min_silence_len = 600  # 最小静音长度
@@ -475,16 +430,11 @@ def newThread(data,ws,flag):
         T1 = time.time()                                                #开始计时
         
         t1 = time.time()
-        tempFileName, audioLen = save_as_webm(data,ws)                                   #二进制数据转码mp3
+        tempAudio, audioLen = save_as_webm(data,ws)                                   #二进制数据转码mp3
+        totaled, conbined, singled = audioSlice(tempAudio)
         t2 = time.time()
-        print(f"F saving:{t2-t1}")
-
-        t1 = time.time()
-        totaled, conbined, singled = audioSlice(tempFileName)
-        t2 = time.time()
-        print(f"silence segment time:{t2-t1}")
-        
-        os.remove(tempFileName)
+        print(f"preprocessing time:{t2-t1}")
+    
 
 
         if(totaled == -1):    
@@ -517,7 +467,7 @@ def newThread(data,ws,flag):
             singled.export("sing{}{}.wav".format(wsID[ws],count[ws]))  
 
             t2 = time.time()
-            print(f"file preporcessing:{t2-t1}")
+            print(f"file preparing time:{t2-t1}")
             #### 并行操作
 
             # lists = [f"conb{count}.wav",f"sing{count}.wav"]
