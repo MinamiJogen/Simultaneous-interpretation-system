@@ -440,10 +440,17 @@ def newThread(data,ws,flag):
         print(f"operate: temp{wsID[ws]}{count[ws]}.wav")
 
         T1 = time.time()                                                #开始计时
+        
+        t1 = time.time()
         tempFileName, audioLen = save_as_webm(data,ws)                                   #二进制数据转码mp3
+        t2 = time.time()
+        print(f"F saving:{t2-t1}")
 
-
+        t1 = time.time()
         totaled, conbined, singled = audioSlice(tempFileName)
+        t2 = time.time()
+        print(f"silence segment time:{t2-t1}")
+        
         os.remove(tempFileName)
 
 
@@ -465,13 +472,19 @@ def newThread(data,ws,flag):
 
         if(conbined != None and singled != None):
             print("Two task")
+            
+            
+            t1 = time.time()
 
+            
             conbinedLen = conbined.duration_seconds
             singledLen = singled.duration_seconds
 
             conbined.export("conb{}{}.wav".format(wsID[ws],count[ws]))
             singled.export("sing{}{}.wav".format(wsID[ws],count[ws]))  
 
+            t2 = time.time()
+            print(f"file preporcessing:{t2-t1}")
             #### 并行操作
 
             # lists = [f"conb{count}.wav",f"sing{count}.wav"]
@@ -535,19 +548,25 @@ def newThread(data,ws,flag):
             wsSend(ws)
             print("---")
             ###
-
+            t1 = time.time()
             os.remove("conb{}{}.wav".format(wsID[ws],count[ws]))
             os.remove("sing{}{}.wav".format(wsID[ws],count[ws]))
             
             hh = 0.2 if(Cutted[ws]) else 0.0
             audioLen = int ((hh+conbinedLen)/(hh+conbinedLen + singledLen) * audioLen)
             CutMedia(ws,audioLen)
-
+            t2 = time.time()
+            print(f"post processing time:{t2 - t1}")
         else:
             print("One task")
 
+
+            t1 = time.time()
             totaledLen = totaled.duration_seconds
             totaled.export("total{}{}.wav".format(wsID[ws],count[ws]))
+
+            t2 = time.time()
+            print(f"file preporcessing:{t2-t1}")
 
             print(f"total recognition : {totaledLen}")
             t1 = time.time()           
@@ -560,7 +579,7 @@ def newThread(data,ws,flag):
             #    "一个建筑的一个建筑" in totaledResult):
             #     nowString = ""
 
-
+            t1 = time.time()
             if(totaledResult == nowString[ws] and nowString[ws] != ""):
                 
                 mainString[ws].append(totaledResult)
@@ -592,6 +611,10 @@ def newThread(data,ws,flag):
                 nowString[ws] = totaledResult
                 wsSend(ws)
             os.remove("total{}{}.wav".format(wsID[ws],count[ws]))
+        
+        t2 = time.time()
+        
+        print(f"postprocessing time:{t2 - t1}")
 
         T2 = time.time()
         print("Process time:{}".format(T2-T1))
@@ -609,6 +632,7 @@ def newThread(data,ws,flag):
         # traceback.print_exc()
         # threadError = True
         return
+
 
 
 def P_TThread(text,ws):
