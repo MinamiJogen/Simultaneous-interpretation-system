@@ -14,7 +14,7 @@ from zhconv import convert
 import re
 import random
 import threading
-
+from io import BytesIO
 
 import whisper
 from ppasr.predict import PPASRPredictor
@@ -61,7 +61,7 @@ count = {}
 
 print("加载识别模型...")
 ####识别模型
-predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= use_gpu)
+predictor = PPASRPredictor(model_tag='conformer_streaming_fbank_wenetspeech',use_gpu= use_gpu,decoder='ctc_greedy')
 # model = whisper.load_model('tiny', device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="xmzhu/whisper-tiny-zh",device=DEVICE)
 # model = pipeline("automatic-speech-recognition", model="zongxiao/whisper-small-zh-CN")
@@ -129,7 +129,51 @@ def clock(sec,ws):
 #     print(f"------------------------------------------------")
     
 #音频处理函数，将二进制数据处理为webm格式
-def save_as_webm(data,ws):
+# def save_as_webm(data,ws):
+#     global count
+#     global Cutted
+#     global threadError
+#     global wsID
+#     lenn = len(data)
+#     try:
+#         data = b''.join(data)
+#     except Exception as e:
+
+#         print(f"Data type:{type(data)}")
+#         print(f"Data len:{len(data)}")
+#         # print(f"Data:{data}")
+#         traceback.print_exc()
+#         threadError = True
+#         for i in len(data):
+#             if(type(data[i]) != 'bytearray'): 
+                
+#                 print(f"{i}:({data[i]}) {bytes}")
+#         # for i in range(len(data)):
+#         #     if( i != 0 and type(data[i]) != type(data[i-1])):
+#         #         print(data[i])
+
+#         raise e
+        
+
+#     tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
+
+#     with open(tempfile, 'wb') as f:                                 #将二进制数据按原格式储存为临时文件（webm）
+#         f.write(data)
+#         f.close()
+    
+#     part = ""
+#     with open(tempfile,"rb") as f:
+#         print(tempfile)
+#         audio = AudioSegment.from_file(tempfile)
+#         if(Cutted[ws]):
+#             part = audio[200:len(audio)]
+#         else:
+#             part = audio
+#     os.remove(tempfile)
+#     part.export(tempfile)
+#     return tempfile, lenn 
+
+def save_as_webm(data, ws):
     global count
     global Cutted
     global threadError
@@ -138,40 +182,32 @@ def save_as_webm(data,ws):
     try:
         data = b''.join(data)
     except Exception as e:
-
         print(f"Data type:{type(data)}")
         print(f"Data len:{len(data)}")
-        # print(f"Data:{data}")
         traceback.print_exc()
         threadError = True
         for i in len(data):
             if(type(data[i]) != 'bytearray'): 
-                
                 print(f"{i}:({data[i]}) {bytes}")
-        # for i in range(len(data)):
-        #     if( i != 0 and type(data[i]) != type(data[i-1])):
-        #         print(data[i])
-
         raise e
-        
+
+    # Use BytesIO to handle the data in memory
+    data_io = BytesIO(data)
+    audio = AudioSegment.from_file(data_io)
+
+    part = ""
+    if(Cutted[ws]):
+        part = audio[200:len(audio)]
+    else:
+        part = audio
 
     tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
 
-    with open(tempfile, 'wb') as f:                                 #将二进制数据按原格式储存为临时文件（webm）
-        f.write(data)
-        f.close()
-    
-    part = ""
-    with open(tempfile,"rb") as f:
-        print(tempfile)
-        audio = AudioSegment.from_file(tempfile)
-        if(Cutted[ws]):
-            part = audio[200:len(audio)]
-        else:
-            part = audio
-    os.remove(tempfile)
-    part.export(tempfile)
-    return tempfile, lenn 
+    # Export the audio segment directly to the file
+    part.export(tempfile, format="wav")
+
+    return tempfile, lenn
+
 
 def CutMedia(ws,second):
 
@@ -285,9 +321,6 @@ def punctuation(text):
 
 def translation(text,ws):
     # return ""
-    
-    
-    
     url = "https://umcat.cis.um.edu.mo/api/translate.php"
 
     if(RecogMode[ws] == 'zh-en'):      

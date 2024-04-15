@@ -14,8 +14,7 @@ from zhconv import convert
 import re
 import random
 import threading
-
-
+from io import BytesIO
 import whisper
 from ppasr.predict import PPASRPredictor
 
@@ -39,7 +38,7 @@ clockFlag = {}                                                    #时钟线程�
 ws_audio_data = {}                                                  #存储不同websocket发送数据的缓存字典
 # recogENOnUse = False                                                  #True：识别模型对象正在使用
 recogENOnUse = threading.Lock()
-recogZHOnUse = threading.Lock()                                                 #True：识别模型对象正在使用
+recogZHOnUse = threading.Lock()                                       
 puncOnUse = threading.Lock()
 taskOnConduct = {}
 onPosProcess = False                                                #True：正在进行后处理
@@ -129,7 +128,51 @@ def clock(sec,ws):
 #     print(f"------------------------------------------------")
     
 #音频处理函数，将二进制数据处理为webm格式
-def save_as_webm(data,ws):
+# def save_as_webm(data,ws):
+#     global count
+#     global Cutted
+#     global threadError
+#     global wsID
+#     lenn = len(data)
+#     try:
+#         data = b''.join(data)
+#     except Exception as e:
+
+#         print(f"Data type:{type(data)}")
+#         print(f"Data len:{len(data)}")
+#         # print(f"Data:{data}")
+#         traceback.print_exc()
+#         threadError = True
+#         for i in len(data):
+#             if(type(data[i]) != 'bytearray'): 
+                
+#                 print(f"{i}:({data[i]}) {bytes}")
+#         # for i in range(len(data)):
+#         #     if( i != 0 and type(data[i]) != type(data[i-1])):
+#         #         print(data[i])
+
+#         raise e
+        
+
+#     tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
+
+#     with open(tempfile, 'wb') as f:                                 #将二进制数据按原格式储存为临时文件（webm）
+#         f.write(data)
+#         f.close()
+    
+#     part = ""
+#     with open(tempfile,"rb") as f:
+#         print(tempfile)
+#         audio = AudioSegment.from_file(tempfile)
+#         if(Cutted[ws]):
+#             part = audio[200:len(audio)]
+#         else:
+#             part = audio
+#     os.remove(tempfile)
+#     part.export(tempfile)
+#     return tempfile, lenn 
+
+def save_as_webm(data, ws):
     global count
     global Cutted
     global threadError
@@ -138,40 +181,34 @@ def save_as_webm(data,ws):
     try:
         data = b''.join(data)
     except Exception as e:
-
         print(f"Data type:{type(data)}")
         print(f"Data len:{len(data)}")
-        # print(f"Data:{data}")
         traceback.print_exc()
         threadError = True
         for i in len(data):
             if(type(data[i]) != 'bytearray'): 
-                
                 print(f"{i}:({data[i]}) {bytes}")
-        # for i in range(len(data)):
-        #     if( i != 0 and type(data[i]) != type(data[i-1])):
-        #         print(data[i])
-
         raise e
-        
+
+    # Use BytesIO to handle the data in memory
+    data_io = BytesIO(data)
+    audio = AudioSegment.from_file(data_io)
+
+    part = ""
+    if(Cutted[ws]):
+        part = audio[200:len(audio)]
+    else:
+        part = audio
 
     tempfile = "temp{}{}.wav".format(wsID[ws],count[ws])
 
-    with open(tempfile, 'wb') as f:                                 #将二进制数据按原格式储存为临时文件（webm）
-        f.write(data)
-        f.close()
-    
-    part = ""
-    with open(tempfile,"rb") as f:
-        print(tempfile)
-        audio = AudioSegment.from_file(tempfile)
-        if(Cutted[ws]):
-            part = audio[200:len(audio)]
-        else:
-            part = audio
-    os.remove(tempfile)
-    part.export(tempfile)
-    return tempfile, lenn 
+    # Export the audio segment directly to the file
+    part.export(tempfile, format="wav")
+
+    return tempfile, lenn
+
+
+
 
 def CutMedia(ws,second):
 
@@ -866,11 +903,11 @@ def delete_wav_files():
 @app.route('/')
 def hello_world():
     random_number = random.randint(1, 100)
-    return render_template("index.html",number=random_number)
+    return render_template("index2.html",number=random_number)
 @app.route("/single")
 def return_single():
     random_number = random.randint(1, 100)
-    return render_template("indexSingle.html",number=random_number)
+    return render_template("indexSingle2.html",number=random_number)
 
 # @app.errorhandler(Exception)
 # def handle_exception(e):                                           #处理服务器异常函数，删除所有临时数据
@@ -887,4 +924,5 @@ if __name__ == '__main__':
     # punctuation("测试")
     server = pywsgi.WSGIServer(('0.0.0.0', 8000), app, handler_class=WebSocketHandler)#设立socket端口
     print('server start')
+    
     server.serve_forever()                                         #开启服务器
