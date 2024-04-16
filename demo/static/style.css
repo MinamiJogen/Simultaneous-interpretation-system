@@ -298,7 +298,7 @@
     margin: 10pt;
     font-size: small;
     position: absolute;
-    bottom: 0;
+    bottom: 20pt;
     width: 80%;
   }
 
@@ -392,14 +392,6 @@
     margin-right: 10%;
     width: 60%;
     height: auto;
-  }
-	
-  .linn{
-    font-size: 30pt;
-  }
-
-  .copyright{
-    font-size: 15pt;
   }
 	
 	
