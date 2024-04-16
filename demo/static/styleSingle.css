@@ -197,6 +197,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: space-around;
+    margin-top: 10pt;
     /* margin-bottom: 1%; */
   }
 
@@ -296,11 +297,13 @@
 
   .copyright{
     text-align: center;
-    margin: 10pt;
+    margin: 0;
     font-size: small;
-    /* position: absolute;
-    bottom: 20pt; */
-    width: 80%;
+    margin-top: 10pt;
+    margin-bottom: 10pt;
+    /* position: absolute; */
+    /* width: 80vw; */
+    align-self:baseline;
   }
 
   .bottomImage{
@@ -309,7 +312,7 @@
 
 
  /*小窗*/
-  @media screen and (max-height: 300px) {
+  @media screen and (max-height: 450px) {
     .topbar-container{
       display: none;
     }

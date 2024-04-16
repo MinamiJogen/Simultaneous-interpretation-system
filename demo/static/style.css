@@ -143,15 +143,24 @@
     font-size: 15pt;
     /* padding: 0; */
   }
-
-  
   .icon{
     height: 15pt;
     padding: 0;
     margin: 0;
   }
 
-  
+  .about{
+    display: none;
+    position:fixed;
+    top:0;
+    left:0;
+    width: 50vw;
+    padding-top: 20vh;
+    padding-left: 25vw;
+    padding-right: 25vw;
+    padding-bottom: 20vh;
+    background-color: rgba(128, 128, 128, 0.5);
+  }
 
 
   .main-container{
@@ -189,6 +198,7 @@
     padding-left: 5%;
     padding-right: 5%;
     position: absolute;
+    text-align: center;
     /* bottom: 0; */
   }
 
@@ -199,6 +209,7 @@
     flex-wrap: wrap;
     justify-content: space-around;
     /* margin-bottom: 1%; */
+    margin-top: 10pt;
   }
 
   .contact{
@@ -238,7 +249,8 @@
     height: 60vh;
     /* overflow: auto; */
     /* padding: 0px 3%; */
-    margin-right: 5%;
+    margin-right: 3.5%;
+    margin-left: 1.5%;
   }
 
   .normal-text{
@@ -295,17 +307,20 @@
 
   .copyright{
     text-align: center;
-    margin: 10pt;
+    margin: 0;
     font-size: small;
+    margin-top: 10pt;
+    margin-bottom: 10pt;
     /* position: absolute; */
-    width: 80%;
+    /* width: 80vw; */
+    align-self:baseline;
   }
 
   .bottomImage{
     height: 50pt;
   }
  /*小窗*/
-  @media screen and (max-height: 300px) {
+  @media screen and (max-height: 450px) {
     .topbar-container{
       display: none;
     }
