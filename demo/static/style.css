@@ -297,8 +297,7 @@
     text-align: center;
     margin: 10pt;
     font-size: small;
-    position: absolute;
-    bottom: 20pt;
+    /* position: absolute; */
     width: 80%;
   }
 
@@ -378,7 +377,7 @@
 	}
 	
 	.mark-container{
-		margin-bottom: 10%;
+		/* margin-bottom: 10%; */
 		align-items: baseline;
 	}
 	
@@ -392,6 +391,10 @@
     margin-right: 10%;
     width: 60%;
     height: auto;
+  }
+
+  .copyright{
+    margin-bottom: 20pt;
   }
 	
 	
