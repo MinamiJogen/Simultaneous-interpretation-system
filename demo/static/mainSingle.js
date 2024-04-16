@@ -127,6 +127,8 @@ window.onload = function() {
       for(i=0;i<linns.length;i++){
         linns[i].style.fontSize = '20pt';
       }
+
+      document.getElementsByClassName('copyright')[0].style.fontSize = '20pt';
     }
   }catch{
   }
