@@ -343,14 +343,31 @@ def recognition(fileList,ws):
     # #ppasr
     global recogENOnUse
     global recogZHOnUse
+    
     if(RecogMode[ws] == 'zh-en' or RecogMode[ws] == 'zh-pt'):
+        buffer=BytesIO()
+        fileList.export(buffer)
+        buffer = buffer.getvalue()  # 获取 BytesIO 对象的内容作为字节串
+        
         recogZHOnUse.acquire()
-        result = predictor.predict(audio_data=fileList, use_pun=False)['text']
+        result = predictor.predict(audio_data=buffer, use_pun=False)['text']
         recogZHOnUse.release()
     elif(RecogMode[ws] == 'en-zh' or RecogMode[ws] =='en-pt'):
+        
+        if(fileList.frame_rate != 16000):
+            fileList = fileList.set_frame_rate(16000)
+        if(fileList.channels == 2):
+            fileList = fileList.set_channels(1)
+        if fileList.sample_width != 2:   # int16
+            fileList = fileList.set_sample_width(2)
+            
+        arr = np.array(fileList.get_array_of_samples())
+        arr = arr.astype(np.float32)/32768.0
+        
         recogENOnUse.acquire()
-        result = enmodel.transcribe(fileList)["text"]
+        result = enmodel.transcribe(arr)['text']
         recogENOnUse.release()
+    print(result)
     return result
 
 def audioSlice(audio):
@@ -455,19 +472,15 @@ def newThread(data,ws,flag):
 
         if(conbined != None and singled != None):
             print("Two task")
-            
-            
-            t1 = time.time()
 
             
             conbinedLen = conbined.duration_seconds
             singledLen = singled.duration_seconds
 
-            conbined.export("conb{}{}.wav".format(wsID[ws],count[ws]))
-            singled.export("sing{}{}.wav".format(wsID[ws],count[ws]))  
+            # conbined.export("conb{}{}.wav".format(wsID[ws],count[ws]))
+            # singled.export("sing{}{}.wav".format(wsID[ws],count[ws]))  
 
-            t2 = time.time()
-            print(f"file preparing time:{t2-t1}")
+
             #### 并行操作
 
             # lists = [f"conb{count}.wav",f"sing{count}.wav"]
@@ -492,7 +505,7 @@ def newThread(data,ws,flag):
 
             print(f"conb recognition : {conbinedLen}")
             t1 = time.time()
-            conbinedResult = recognition(f"conb{wsID[ws]}{count[ws]}.wav",ws)
+            conbinedResult = recognition(conbined,ws)
             t2 = time.time()
             print(f"conb recognition time:{t2 - t1}")
             mainString[ws].append(conbinedResult) 
@@ -524,7 +537,7 @@ def newThread(data,ws,flag):
             print("task 2:")
             print(f"sing recognition : {singledLen}")
             t1 = time.time()
-            singledResult = recognition(f"sing{wsID[ws]}{count[ws]}.wav",ws)
+            singledResult = recognition(singled,ws)
             t2 = time.time()
             print(f"sing recognition time:{t2 - t1}")
             nowString[ws] = singledResult
@@ -532,8 +545,8 @@ def newThread(data,ws,flag):
             print("---")
             ###
             t1 = time.time()
-            os.remove("conb{}{}.wav".format(wsID[ws],count[ws]))
-            os.remove("sing{}{}.wav".format(wsID[ws],count[ws]))
+            # os.remove("conb{}{}.wav".format(wsID[ws],count[ws]))
+            # os.remove("sing{}{}.wav".format(wsID[ws],count[ws]))
             
             hh = 0.2 if(Cutted[ws]) else 0.0
             audioLen = int ((hh+conbinedLen)/(hh+conbinedLen + singledLen) * audioLen)
@@ -543,17 +556,12 @@ def newThread(data,ws,flag):
         else:
             print("One task")
 
-
-            t1 = time.time()
             totaledLen = totaled.duration_seconds
-            totaled.export("total{}{}.wav".format(wsID[ws],count[ws]))
-
-            t2 = time.time()
-            print(f"file preporcessing:{t2-t1}")
+            # totaled.export("total{}{}.wav".format(wsID[ws],count[ws]))
 
             print(f"total recognition : {totaledLen}")
             t1 = time.time()           
-            totaledResult = recognition(f"total{wsID[ws]}{count[ws]}.wav",ws)
+            totaledResult = recognition(totaled,ws)
             t2 = time.time()
             print(f"total recognition time:{t2 - t1}")
 
@@ -593,7 +601,7 @@ def newThread(data,ws,flag):
             else:
                 nowString[ws] = totaledResult
                 wsSend(ws)
-            os.remove("total{}{}.wav".format(wsID[ws],count[ws]))
+            # os.remove("total{}{}.wav".format(wsID[ws],count[ws]))
         
         t2 = time.time()
         
