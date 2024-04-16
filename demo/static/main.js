@@ -125,7 +125,7 @@ window.onload = function() {
     
     linns = document.querySelectorAll("#linn")
     for(i=0;i<linns.length;i++){
-      linns[i].style.fontSize = '15pt';
+      linns[i].style.fontSize = '20pt';
     }
   }
   document.getElementById('Hiscontent').style.fontSize = textFont[nowfont];
