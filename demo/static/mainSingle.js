@@ -123,6 +123,7 @@ window.onload = function() {
       document.getElementById('title').style.width = '50vw';
       document.getElementsByClassName('container')[0].style.marginTop = '10pt';
       document.getElementById('contact us').style.fontSize = mobileSize;
+      document.getElementById('related links').style.fontSize = mobileSize;
       linns = document.getElementsByClassName("linn")
       for(i=0;i<linns.length;i++){
         linns[i].style.fontSize = '20pt';
