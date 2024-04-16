@@ -207,6 +207,7 @@
     margin: 0;
     height:80%;
     width:20%;
+    font-size: 15pt;
   }
 
   .link{
@@ -215,6 +216,7 @@
     margin: 0;
     height:80%;
     width:20%;
+    font-size: 15pt;
     
   }
 
@@ -293,7 +295,7 @@
 
   .copyright{
     text-align: center;
-    margin: 10px;
+    margin: 10pt;
     font-size: small;
     position: absolute;
     bottom: 0;
@@ -392,6 +394,9 @@
     height: auto;
   }
 	
+  .linn{
+    font-size: 30pt;
+  }
 	
 	
 	

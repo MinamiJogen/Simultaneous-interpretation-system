@@ -378,7 +378,7 @@ def audioSlice(audio):
     totaled = audioList[0]
     for au in range(1,len(audioList)):
         totaled = totaled + audioList[au]
-    
+
 
     if(totaled.duration_seconds < THRESHOLD):
         totaled = None       
