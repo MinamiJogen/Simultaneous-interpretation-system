@@ -122,12 +122,12 @@ window.onload = function() {
       document.getElementById('zh-pt').style.fontSize = mobileSize;
       document.getElementById('title').style.width = '50vw';
       document.getElementsByClassName('container')[0].style.marginTop = '10pt';
-      document.getElementById('contact us').style.fontSize = mobileSize;
-      document.getElementById('related links').style.fontSize = mobileSize;
-      linns = document.getElementsByClassName("linn")
-      for(i=0;i<linns.length;i++){
-        linns[i].style.fontSize = '20pt';
-      }
+      // document.getElementById('contact us').style.fontSize = mobileSize;
+      // document.getElementById('related links').style.fontSize = mobileSize;
+      // linns = document.getElementsByClassName("linn")
+      // for(i=0;i<linns.length;i++){
+      //   linns[i].style.fontSize = '20pt';
+      // }
 
       document.getElementsByClassName('copyright')[0].style.fontSize = '20pt';
     }
@@ -247,8 +247,8 @@ document.getElementById('language-change').addEventListener('click', function() 
 
     document.getElementById('recog content').innerHTML = languages['recog content'][nowlang];
     // document.getElementById('trans content').innerHTML = languages['trans content'][nowlang];
-    document.getElementById('contact us').innerHTML = languages['contact us'][nowlang];
-    document.getElementById('related links').innerHTML = languages['related links'][nowlang];
+    // document.getElementById('contact us').innerHTML = languages['contact us'][nowlang];
+    // document.getElementById('related links').innerHTML = languages['related links'][nowlang];
     document.getElementById('recog content').innerHTML = languages['recog content'][nowlang];
     document.getElementById('start').innerHTML = languages[nowStartButton][nowlang];
     // document.getElementById('language-change').innerHTML = languages['language-change'][nowlang];
@@ -261,15 +261,15 @@ document.getElementById('language-change').addEventListener('click', function() 
     document.getElementById('zh-pt').innerHTML = languages['zh-pt'][nowlang];
     document.getElementById('en-pt').innerHTML = languages['en-pt'][nowlang];
 
-    link = document.getElementById('UM');
-    img = link.querySelector('img');
-    link.textContent = languages['UM'][nowlang];
-    link.insertBefore(img,link.firstChild);
+    // link = document.getElementById('UM');
+    // img = link.querySelector('img');
+    // link.textContent = languages['UM'][nowlang];
+    // link.insertBefore(img,link.firstChild);
 
-    link = document.getElementById('NLP2CT');
-    img = link.querySelector('img');
-    link.textContent = languages['NLP2CT'][nowlang];
-    link.insertBefore(img,link.firstChild);
+    // link = document.getElementById('NLP2CT');
+    // img = link.querySelector('img');
+    // link.textContent = languages['NLP2CT'][nowlang];
+    // link.insertBefore(img,link.firstChild);
 
 })
 

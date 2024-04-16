@@ -387,9 +387,9 @@
 	}
 
   .bottomImage{
-    margin-left: 10%;
-    margin-right: 10%;
-    width: 60%;
+    /* margin-left: 10%;
+    margin-right: 10%; */
+    width: 50vw;
     height: auto;
   }
 
