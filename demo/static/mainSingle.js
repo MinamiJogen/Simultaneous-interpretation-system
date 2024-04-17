@@ -310,6 +310,17 @@ document.getElementById('clean').addEventListener('click', function() {
   ws.send("RESET")                                              //提醒后端清除数据
 });
 
+document.getElementById('aboutButton').addEventListener('click', function() {
+  let about = document.getElementById('about');
+  about.style.display = 'block';
+  console.log("about button","click");
+});
+
+document.getElementById('about').addEventListener('click',function(){
+  console.log("about","click");
+  document.getElementById('about').style.display = 'none';
+});
+
 document.getElementById('model').addEventListener('click', function() {
   var x = document.getElementById("hiddenButton");
   var fa = document.getElementById("model");

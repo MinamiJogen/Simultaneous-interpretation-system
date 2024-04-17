@@ -354,6 +354,16 @@ document.getElementById('model').addEventListener('click', function() {
   
 });
 
+document.getElementById('aboutButton').addEventListener('click', function() {
+  let about = document.getElementById('about');
+  about.style.display = 'block';
+  console.log("about button","click");
+});
+
+document.getElementById('about').addEventListener('click',function(){
+  console.log("about","click");
+  document.getElementById('about').style.display = 'none';
+});
 
 function selectMode(mode){
   document.getElementById('hiddenButton').style.display = "none";

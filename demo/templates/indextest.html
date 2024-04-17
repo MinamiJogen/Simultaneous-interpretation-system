@@ -16,7 +16,7 @@
 		<h1>「同語」同声传译系统</h1>
 		<p class="english-title">WeSpeak: Simutinously Interpretation System</p>
 	</div>-->
-    <img id = "title" src="../static/image/title.svg" style="min-height: 20pt; height: 65%">
+    <img id = "title" src="../static/image/title.png" style="min-height: 20pt; height: 65%">
     <div class="setting-container">
       <button class="settingButton" id="model">中-英</button>
       <button class="settingButton" id="language-change"></img>
@@ -25,6 +25,10 @@
       <button class="settingButton" id="font-size">
         <img class="icon" id="icon2" src="../static/image/fontSize.png"></img>
       </button>
+      <button class="settingButton" id="aboutButton">
+        <img class="icon" id="icon3" src="../static/image/about.png"></img>
+      </button>
+
     </div>
     <div id = "hiddenButton" class = "hiddenButton" style="display: none; position: absolute;">
       <button class="settingButton" id="zh-en" onclick="selectMode('zh-en')">中-英</button>
@@ -35,7 +39,7 @@
     </div>
 
     <div id="about" class="about">
-      <img src="../static/image/AboutMe.svg"></img>
+      <img src="../static/image/AboutMe.png" class="aboutImg" id="aboutImg"></img>
     </div>
   </div>
   <div class="main-container">

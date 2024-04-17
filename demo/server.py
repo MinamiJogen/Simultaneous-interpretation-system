@@ -376,7 +376,7 @@ def audioSlice(audio):
     # audio = AudioSegment.from_file(filename)
 
     # 设置分割参数
-    min_silence_len = 600  # 最小静音长度
+    min_silence_len = 800  # 最小静音长度
     silence_thresh = -38  # 静音阈值，越小越严格
     keep_silence = 600  # 保留静音长度
     # print(audio)

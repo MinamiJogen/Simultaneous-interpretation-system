@@ -124,11 +124,15 @@
   }
 
   #language-change{
-    margin-right: 20px;
+    margin-right: 12pt;
   }
 
   #model{
-    margin-right: 20px;
+    margin-right: 12pt;
+  }
+
+  #font-size{
+    margin-right: 12pt;
   }
 
   /* #font-size{
@@ -148,6 +152,29 @@
     height: 15pt;
     padding: 0;
     margin: 0;
+  }
+
+  .about{
+    display: none;
+    position:fixed;
+    top:0;
+    left:0;
+    /* width: 50vw; */
+    padding-top: 20vh;
+    /* padding-left: 25vw;
+    padding-right: 25vw; */
+    text-align: center;
+    
+    padding-bottom: 20vh;
+    background-color: rgba(128, 128, 128, 0.5);
+    z-index: 999;
+    height: 100%;
+    width: 100%;
+  }
+
+  .aboutImg{
+    width: 300pt;
+    
   }
 
   
