@@ -115,6 +115,7 @@ window.onload = function() {
     
     document.getElementById('icon1').style.height = mobileSize;
     document.getElementById('icon2').style.height = mobileSize;
+    document.getElementById('icon3').style.height = mobileSize;
     document.getElementById('model').style.fontSize = mobileSize;
     document.getElementById('zh-en').style.fontSize = mobileSize;
     document.getElementById('en-zh').style.fontSize = mobileSize;
@@ -122,6 +123,8 @@ window.onload = function() {
     document.getElementById('zh-pt').style.fontSize = mobileSize;
     document.getElementById('title').style.width = '50vw';
     document.getElementsByClassName('container')[0].style.marginTop = '10pt';
+
+    document.getElementById('aboutImg').style.width = "80vw";
     // document.getElementById('contact us').style.fontSize = mobileSize;
     // document.getElementById('related links').style.fontSize = mobileSize;
     // linns = document.getElementsByClassName("linn")
