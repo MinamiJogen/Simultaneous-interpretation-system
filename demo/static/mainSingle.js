@@ -5,7 +5,7 @@ var receivedData = "";
 var enc;
 var fileType = "";
 var PrevPackate = ""
-var Running = true
+var Running = true;
 
 var nowStartButton = "start start";
 var nowlang = 'cn';
@@ -97,7 +97,8 @@ var buttonFont = ['13pt','20pt','25pt'];
 var textFont = ['14pt','16pt','18pt'];
 var normalFont = ['14pt','16pt','18pt'];
 
-
+var nowWriting = 0;
+var count = 0;
 
 /**页面初始化 */
 window.onload = function() {
@@ -200,13 +201,14 @@ window.onload = function() {
 
     if(PrevPackate == ""){
       let speed = 500.0 / receivedData.nowString.length
-      setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString,speed),0);
+      setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString,speed),0,1,count);
     }else{
       if(receivedData.nowString !== ""){
         NowCommon = getCommonPrefix(PrevPackate.nowString, receivedData.nowString)
         Nowcontent.innerHTML = receivedData.nowString.substring(0,NowCommon); 
-        let speed = 500.0 / receivedData.nowString.substring(NowCommon).length
-        setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString.substring(NowCommon),speed),0)
+        let speed = 500.0 / receivedData.nowString.substring(NowCommon).length;
+        count = count +1;
+        setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString.substring(NowCommon),speed,1,count),0)
       }else{
         Nowcontent.innerHTML = ""; 
       }
@@ -516,20 +518,27 @@ function checkOnBottom(id){
   }
 }
 
-function typeWriter(id,divid,txt,speed) {
+function typeWriter(id,divid,txt,speed, op,now) {
   let i = 0;
   // console.log('aa',typeof(txt))
   // console.log('bb', txt)
+
+  if(op == 1){
+    nowWriting = now;
+  }
 
   let lengg = txt.length
 
   function type(){
     if (i < lengg) {
+      if(op == 1 && nowWriting > now){
+        return
+      }
       let isOnBottom = checkOnBottom(divid);
       document.getElementById(id).innerHTML += txt.charAt(i);
-      if(isOnBottom){
+      // if(isOnBottom){
         document.getElementById(divid).scrollTop = document.getElementById(divid).scrollHeight;
-      }
+      // }
       i++;
       setTimeout(type, speed);
     }

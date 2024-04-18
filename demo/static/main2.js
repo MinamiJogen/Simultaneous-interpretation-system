@@ -96,7 +96,9 @@ var buttonFont = ['13pt','20pt','25pt'];
 var textFont = ['14pt','16pt','18pt'];
 var normalFont = ['14pt','16pt','18pt'];
 
+var nowWriting = 0
 
+var count = 0
 
 /**页面初始化 */
 window.onload = function() {
@@ -175,7 +177,7 @@ window.onload = function() {
 
   ws.onmessage = function(evt) {                                //socket监听信息传入
 
-
+    
     receivedData = JSON.parse(evt.data);                                       //储存到本地
     console.log('Received message from server: ', receivedData);   
     
@@ -200,9 +202,9 @@ window.onload = function() {
 
     if(PrevPackate == ""){
       let speed = 500.0 / receivedData.nowString.length
-      typeWriter('Nowcontent','recognition-scroll', receivedData.nowString,speed)
+      typeWriter('Nowcontent','recognition-scroll', receivedData.nowString,speed,0,0)
       speed = 1000.0 / splicing(receivedData.tranString).length
-      typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString),speed)
+      typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString),speed,1,count)
 
     }else{
       
@@ -210,14 +212,15 @@ window.onload = function() {
         TranCommon = getCommonPrefix(splicing(PrevPackate.tranString), splicing(receivedData.tranString))
         Trancontent.innerHTML = splicing(receivedData.tranString).substring(0,TranCommon);
         let speed = 1000.0 / splicing(receivedData.tranString).substring(TranCommon).length
-        setTimeout(typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString).substring(TranCommon),speed),0)
+        setTimeout(typeWriter('Trancontent','translation-scroll', splicing(receivedData.tranString).substring(TranCommon),speed,0,0),0)
       }
       
       if(receivedData.nowString !== ""){
+        count += 1;
         NowCommon = getCommonPrefix(PrevPackate.nowString, receivedData.nowString)
         Nowcontent.innerHTML = receivedData.nowString.substring(0,NowCommon); 
         let speed = 500.0 / receivedData.nowString.substring(NowCommon).length
-        setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString.substring(NowCommon),speed),0)
+        setTimeout(typeWriter('Nowcontent','recognition-scroll', receivedData.nowString.substring(NowCommon),speed,1,count),0)
       }else{
         Nowcontent.innerHTML = ""; 
       }
@@ -526,20 +529,27 @@ function checkOnBottom(id){
   }
 }
 
-function typeWriter(id,divid,txt,speed) {
+function typeWriter(id,divid,txt,speed, op,now) {
   let i = 0;
   // console.log('aa',typeof(txt))
   // console.log('bb', txt)
+
+  if(op == 1){
+    nowWriting = now;
+  }
 
   let lengg = txt.length
 
   function type(){
     if (i < lengg) {
+      if(op == 1 && nowWriting > now){
+        return
+      }
       let isOnBottom = checkOnBottom(divid);
       document.getElementById(id).innerHTML += txt.charAt(i);
-      if(isOnBottom){
+      // if(isOnBottom){
         document.getElementById(divid).scrollTop = document.getElementById(divid).scrollHeight;
-      }
+      // }
       i++;
       setTimeout(type, speed);
     }

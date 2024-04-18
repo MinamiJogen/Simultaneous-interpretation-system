@@ -515,27 +515,29 @@ function checkOnBottom(id){
   }
 }
 
-function typeWriter(id,divid,txt,speed) {
+function typeWriter(id,divid,txt,speed, op,now) {
   let i = 0;
   // console.log('aa',typeof(txt))
   // console.log('bb', txt)
-
+  if(op == 1){
+    nowWriting = now;
+  }
   let lengg = txt.length
-
   function type(){
     if (i < lengg) {
+      if(op == 1 && nowWriting > now){
+        return
+      }
       let isOnBottom = checkOnBottom(divid);
       document.getElementById(id).innerHTML += txt.charAt(i);
-      if(isOnBottom){
+      // if(isOnBottom){
         document.getElementById(divid).scrollTop = document.getElementById(divid).scrollHeight;
-      }
+      // }
       i++;
       setTimeout(type, speed);
     }
   }
-
   type();
-
 }
 
 /**将字符串列表组合成一个字符串 */ 
