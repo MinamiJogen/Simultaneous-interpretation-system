@@ -16,10 +16,9 @@ import random
 import threading
 from io import BytesIO
 import sys
-
+from datetime import datetime
 import whisper
 from ppasr.predict import PPASRPredictor
-
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
@@ -444,6 +443,9 @@ def newThread(data,ws,flag):
         
         taskOnConduct[ws] = True
         print(f"--------------------Thread{wsID[ws]}-{count[ws]}--------------------")
+        # 输出当前时间
+        current_time = datetime.now()
+        print("[", current_time, "]")
         print(f"operate: temp{wsID[ws]}{count[ws]}.wav")
 
         T1 = time.time()                                                #开始计时
@@ -463,6 +465,9 @@ def newThread(data,ws,flag):
             wsSend(ws)
             taskOnConduct[ws] = False
             print(f"---------------ThreadEnd{wsID[ws]}-{count[ws]}--------------------------")
+            # 输出当前时间
+            current_time = datetime.now()
+            print("[", current_time, "]")
             return 
         elif(totaled == None):
             print("too short")
@@ -470,6 +475,9 @@ def newThread(data,ws,flag):
             wsSend(ws)
             taskOnConduct[ws] = False
             print(f"---------------ThreadEnd{wsID[ws]}-{count[ws]}--------------------------")
+            # 输出当前时间
+            current_time = datetime.now()
+            print("[", current_time, "]")
             return 
 
         if(conbined != None and singled != None):
@@ -617,7 +625,10 @@ def newThread(data,ws,flag):
         # print(f"main:{mainString}")
         # print(f"now:{nowString}")
         # print(f"trans:{tranString}")
-        print(f"---------------ThreadEnd--------------------------")
+        print(f"---------------ThreadEnd{wsID[ws]}-{count[ws]}--------------------------")
+        # 输出当前时间
+        current_time = datetime.now()
+        print("[", current_time, "]")
 
 
         
@@ -876,15 +887,9 @@ def return_single():
 
 delete_wav_files()
 
-with open(log_file, 'a') as f:
-    sys.stdout = f  # 重定向 stdout 到日志文件
-
-    if __name__ == '__main__':
-        # recognition("test.wav")
-        # punctuation("测试")
-        server = pywsgi.WSGIServer(('0.0.0.0', 8080), app, handler_class=WebSocketHandler)  # 设立socket端口
-        print('server start')
-        server.serve_forever()
-
-    # 还原标准输出
-    sys.stdout = sys.__stdout__                                  #开启服务器
+if __name__ == '__main__':
+    # recognition("test.wav")
+    # punctuation("测试")
+    server = pywsgi.WSGIServer(('0.0.0.0', 8080), app, handler_class=WebSocketHandler)#设立socket端口
+    print('server start')
+    server.serve_forever()                                         #开启服务器
