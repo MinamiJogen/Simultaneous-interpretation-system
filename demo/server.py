@@ -887,9 +887,15 @@ def return_single():
 
 delete_wav_files()
 
-if __name__ == '__main__':
-    # recognition("test.wav")
-    # punctuation("测试")
-    server = pywsgi.WSGIServer(('0.0.0.0', 8080), app, handler_class=WebSocketHandler)#设立socket端口
-    print('server start')
-    server.serve_forever()                                         #开启服务器
+with open(log_file, 'a') as f:
+    sys.stdout = f  # 重定向 stdout 到日志文件
+
+    if __name__ == '__main__':
+        # recognition("test.wav")
+        # punctuation("测试")
+        server = pywsgi.WSGIServer(('0.0.0.0', 8080), app, handler_class=WebSocketHandler)  # 设立socket端口
+        print('server start')
+        server.serve_forever()
+
+    # 还原标准输出
+    sys.stdout = sys.__stdout__
