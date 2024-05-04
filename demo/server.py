@@ -625,7 +625,7 @@ def newThread(data,ws,flag):
         # print(f"main:{mainString}")
         # print(f"now:{nowString}")
         # print(f"trans:{tranString}")
-        print(f"---------------ThreadEnd{wsID[ws]}-{count[ws]}--------------------------")
+        print(f"---------------ThreadEnd{wsID[ws]}-{count[ws]-1}--------------------------")
         # 输出当前时间
         current_time = datetime.now()
         print("[", current_time, "]")
